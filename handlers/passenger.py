@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import mysql.connector
 from database.config import DB_CONFIG, CITIES, SEAT_OPTIONS, TIME_OPTIONS
 from database.db import get_connection
+from handlers.matches import find_matching_trips
 
 passenger_router = Router()
 
@@ -64,8 +65,11 @@ def insert_request(passenger_id: int, from_city: str, to_city: str, date_iso: st
 		VALUES (%s, %s, %s, %s, %s, %s)
 	""", (passenger_id, from_city, to_city, date_iso, time_pref, seats))
 	conn.commit()
+	request_id = cur.lastrowid
 	cur.close()
 	conn.close()
+
+	return request_id
 
 # --- Flow ---
 @passenger_router.message(F.text == "🧍 I’m a Passenger")
@@ -138,33 +142,34 @@ async def handle_seats(message: Message, state: FSMContext):
 
 	try:
 		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name)
-		insert_request(passenger_id, from_city, to_city, date, time_pref, seats)
+		request_id = insert_request(passenger_id, from_city, to_city, date, time_pref, seats)
+		matches = find_matching_trips(request_id)
+		print("Matches", matches)
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
 		await state.clear()
 		return
 
-	await message.answer(
-		f"✅ Request posted!\n"
-		f"From: {from_city}\n"
-		f"To: {to_city}\n"
-		f"Date: {date}\n"
-		f"Time: {time_pref}\n"
-		f"Seats: {seats}",
-		reply_markup=ReplyKeyboardRemove()
-	)
+	# If matches are found, show them
+	if matches:
+		text = "✅ Request posted!\n\n🚗 Matching trips found:\n"
+		for m in matches:
+			text += (
+				f"\n👤 Driver: {m['name']}"
+				f"\n📍 From: {m['departure_city']} → To: {m['destination_city']}"
+				f"\n📅 Date: {m['departure_time']}"
+				f"\n💺 Seats available: {m['seats_available']}\n"
+			)
+	else:
+		text = (
+			"✅ Request posted!\n"
+			f"From: {from_city}\n"
+			f"To: {to_city}\n"
+			f"Date: {date}\n"
+			f"Time: {time_pref}\n"
+			f"Seats: {seats}\n\n"
+			"❌ No matching trips found yet."
+		)
+
+	await message.answer(text, reply_markup=ReplyKeyboardRemove())
 	await state.clear()
-	# await message.answer("✅ Your travel request has been saved! We'll notify you when a driver matches.")
-	# await state.finish()
-
-
-
-
-
-
-
-
-
-
-
-

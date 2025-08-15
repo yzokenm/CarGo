@@ -41,7 +41,9 @@ def init_db():
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				INDEX idx_city_time (departure_city, destination_city, departure_time),
+
 				FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE CASCADE
+
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 		"""
 	)
@@ -62,8 +64,10 @@ def init_db():
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				INDEX idx_city_date (from_city, to_city, date),
+
 				FOREIGN KEY (passenger_id) REFERENCES users(id) ON DELETE CASCADE,
 				FOREIGN KEY (matched_trip_id) REFERENCES trips(id) ON DELETE SET NULL
+
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 		"""
 	)
