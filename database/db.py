@@ -72,6 +72,23 @@ def init_db():
 		"""
 	)
 
+	cursor.execute(
+		"""
+			CREATE TABLE IF NOT EXISTS cars (
+				id INT AUTO_INCREMENT PRIMARY KEY,
+				driver_id INT NOT NULL,
+				model VARCHAR(100) NOT NULL,
+				comfort ENUM('standard', 'comfort', 'business') DEFAULT 'standard',
+				has_ac BOOLEAN DEFAULT FALSE,
+				color VARCHAR(50),
+				plate_number VARCHAR(20) UNIQUE,
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+				FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE CASCADE
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+		"""
+	)
 
 	connection.commit()
 	connection.close()
