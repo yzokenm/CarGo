@@ -144,7 +144,6 @@ async def handle_seats(message: Message, state: FSMContext):
 		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name)
 		request_id = insert_request(passenger_id, from_city, to_city, date, time_pref, seats)
 		matches = find_matching_trips(request_id)
-		print("Matches", matches)
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
 		await state.clear()

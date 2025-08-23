@@ -22,20 +22,6 @@ class DriverForm(StatesGroup):
 	price = State()
 	phone_number = State()
 
-def phone_request_kb():
-	return ReplyKeyboardMarkup(
-		keyboard=[
-			[KeyboardButton(text="📞 Share my phone number", request_contact=True)]
-		],
-		resize_keyboard=True,
-		one_time_keyboard=True
-	)
-
-def get_date_options(days: int = 3) -> list[str]:
-	today = datetime.now().date()
-	return [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
-
-
 def ensure_user_and_get_id(telegram_id: int, name: str) -> int:
 	connection = get_connection()
 	cursor = connection.cursor()
@@ -137,40 +123,42 @@ async def handle_destination_city(message: Message, state: FSMContext):
 
 	await state.update_data(destination_city=dest)
 	await state.set_state(DriverForm.departure_date)
-	DATE_OPTIONS = get_date_options(days=3)
-	kb = helper.build_kb(DATE_OPTIONS, per_row=3)  # or dates_kb(days=3) if you kept it separate
+	DATE_OPTIONS = helper.get_date_options(days=3)
+	kb = helper.build_kb(DATE_OPTIONS, per_row=2)
 	await message.answer("Ketish sanasini tanlang:", reply_markup=kb)
 
 
 @driver_router.message(DriverForm.departure_date)
 async def handle_departure_date(message: Message, state: FSMContext):
 	raw = message.text.strip()
-	try:
-		dt = datetime.strptime(raw, "%Y-%m-%d").date()
-	except ValueError:
-		DATE_OPTIONS = get_date_options(days=3)
-		kb = helper.build_kb(DATE_OPTIONS, per_row=3)
+
+	# Try to extract date inside parentheses
+	match = re.search(r"\((\d{4}-\d{2}-\d{2})\)", raw)
+	if not match:
+		DATE_OPTIONS = helper.get_date_options(days=3)
+		kb = helper.build_kb(DATE_OPTIONS, per_row=2)
 		await message.answer("Iltimos, menyudagi sanani tanlang:", reply_markup=kb)
 		return
 
+	dt = datetime.strptime(match.group(1), "%Y-%m-%d").date()
 	today = datetime.now().date()
+
 	if not (today <= dt <= today + timedelta(days=2)):
-		DATE_OPTIONS = get_date_options(days=3)
-		kb = helper.build_kb(DATE_OPTIONS, per_row=3)
+		DATE_OPTIONS = helper.get_date_options(days=3)
+		kb = helper.build_kb(DATE_OPTIONS, per_row=2)
 		await message.answer("Iltimos, ko'rsatilgan sanalardan birini tanlang:", reply_markup=kb)
 		return
 
-	await state.update_data(departure_date=raw)
+	await state.update_data(departure_date=dt.strftime("%Y-%m-%d"))
 	await state.set_state(DriverForm.seats_available)
-	kb = helper.build_kb(SEAT_OPTIONS, per_row=3)
+	kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
 	await message.answer("Mavjud o'rindiqlar sonini tanlang:", reply_markup=kb)
-
 
 @driver_router.message(DriverForm.seats_available)
 async def handle_seats(message: Message, state: FSMContext):
 	txt = message.text.strip()
 	if not txt.isdigit() or int(txt) not in SEAT_OPTIONS:
-		kb = helper.build_kb(SEAT_OPTIONS, per_row=3)
+		kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
 		await message.answer("Iltimos, menyudagi o'rindiqlarni tanlang:", reply_markup=kb)
 		return
 
@@ -191,7 +179,7 @@ async def handle_price(message: Message, state: FSMContext):
 	price = float(cleaned)
 	await state.update_data(price=price)
 	await state.set_state(DriverForm.phone_number)
-	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=phone_request_kb())
+	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=helper.phone_request_kb())
 
 
 @driver_router.message(DriverForm.phone_number, F.content_type == "contact")

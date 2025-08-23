@@ -59,7 +59,6 @@ def find_matching_trips(request_id: int):
 	)
 
 	matches = cursor.fetchall()
-	print("matc", matches)
 	conn.close()
 	return matches
 
