@@ -19,6 +19,7 @@ class DriverForm(StatesGroup):
 	destination_city = State()
 	departure_date = State()
 	seats_available = State()
+	has_post = State()
 	price = State()
 	phone_number = State()
 
@@ -51,6 +52,7 @@ def insert_trip(
 		dep_city: str,
 		dest_city: str,
 		dep_date_iso: str,
+		has_post: str,
 		seats: int,
 		price: float,
 		phone_number: int
@@ -68,17 +70,19 @@ def insert_trip(
 					departure_city,
 					destination_city,
 					departure_time,
+					has_post,
 					seats_available,
 					price,
 					phone_number
 				)
-			VALUES (%s, %s, %s, %s, %s, %s, %s)
+			VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 		""",
 		(
 			driver_id,
 			dep_city,
 			dest_city,
 			dep_datetime,
+			has_post,
 			seats,
 			price,
 			phone_number
@@ -150,9 +154,27 @@ async def handle_departure_date(message: Message, state: FSMContext):
 		return
 
 	await state.update_data(departure_date=dt.strftime("%Y-%m-%d"))
+	# 👇 instead of seats → ask about post
+	await state.set_state(DriverForm.has_post)
+	await message.answer("Post qabul qilasizmi?", reply_markup=helper.yes_no_kb())
+
+
+@driver_router.message(DriverForm.has_post)
+async def handle_has_post(message: Message, state: FSMContext):
+	raw = message.text.strip()
+
+	if raw not in ["✅ Ha", "❌ Yo‘q"]:
+		await message.answer("Iltimos, Ha yoki Yo‘qni tanlang:", reply_markup=helper.yes_no_kb())
+		return
+
+	has_post = 1 if raw == "✅ Ha" else 0
+	await state.update_data(has_post=has_post)
+
+	# 👇 continue flow → ask about seats
 	await state.set_state(DriverForm.seats_available)
 	kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
 	await message.answer("Mavjud o'rindiqlar sonini tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.seats_available)
 async def handle_seats(message: Message, state: FSMContext):
@@ -164,7 +186,7 @@ async def handle_seats(message: Message, state: FSMContext):
 
 	await state.update_data(seats_available=int(txt))
 	await state.set_state(DriverForm.price)
-	kb = helper.build_kb(PRICE_OPTIONS, per_row=2)  # you can tune per_row as needed
+	kb = helper.build_kb(PRICE_OPTIONS, per_row=2)
 	await message.answer("Bir o'rindiq uchun narxni tanlang:", reply_markup=kb)
 
 
@@ -194,24 +216,27 @@ async def save_phone(message: Message, state: FSMContext):
 	departure_city = data["departure_city"]
 	destination_city = data["destination_city"]
 	departure_date = data["departure_date"]
+	has_post = data["has_post"]
 	seats = int(data["seats_available"])
 	price = float(data["price"])
 	phone_number = data["phone_number"]
 
 	try:
 		driver_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name)
-		insert_trip(driver_id, departure_city, destination_city, departure_date, seats, price, phone_number)
+		insert_trip(driver_id, departure_city, destination_city, departure_date, has_post, seats, price, phone_number)
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
 		await state.clear()
 		return
 
 	price_label = f"{int(price):,} UZS".replace(",", " ")
+	has_post_label = "❌ Yo‘q" if has_post == 0 else "✅ Ha"
 	await message.answer(
 		"✅ Safaringiz muvaffaqiyatli chop etildi!\n"
 		f"Dan: {departure_city}\n"
 		f"Ga: {destination_city}\n"
 		f"Sana: {departure_date}\n"
+		f"Pochta olasizmi?: {has_post_label}\n"
 		f"O'rindiqlar: {seats}\n"
 		f"Narx: {price_label}\n"
 		f"Telefon: {phone_number}",

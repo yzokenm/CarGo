@@ -53,3 +53,11 @@ def get_date_options(days: int = 3) -> list[str]:
 	return options
 
 
+def yes_no_kb():
+	return ReplyKeyboardMarkup(
+		keyboard=[
+			[KeyboardButton(text="✅ Ha"), KeyboardButton(text="❌ Yo‘q")]
+		],
+		resize_keyboard=True
+	)
+

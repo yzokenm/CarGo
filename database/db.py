@@ -37,6 +37,7 @@ def init_db():
 				price DECIMAL(10,2) NOT NULL,
 				phone_number VARCHAR(15),
 				status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+				has_post BIT(1) NOT NULL DEFAULT b'0',
 				description TEXT,
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
