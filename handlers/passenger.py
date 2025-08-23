@@ -152,23 +152,24 @@ async def handle_seats(message: Message, state: FSMContext):
 
 	# If matches are found, show them
 	if matches:
-		text = "✅ Request posted!\n\n🚗 Matching trips found:\n"
+		text = "✅ So'rov e'lon qilindi!\n\n🚗 Mos sayohatlar topildi:\n"
 		for m in matches:
 			text += (
-				f"\n👤 Driver: {m['name']}"
-				f"\n📍 From: {m['departure_city']} → To: {m['destination_city']}"
-				f"\n📅 Date: {m['departure_time']}"
-				f"\n💺 Seats available: {m['seats_available']}\n"
+				f"\n👤 Haydovchi: {m['name']}"
+				f"\n📍 Dan: {m['departure_city']} → To: {m['destination_city']}"
+				f"\n📅 Sana: {m['departure_time']}"
+				f"\n💺 Mavjud o'rindiqlar: {m['seats_available']}\n"
+				f"\n☎️ Aloqa uchun: {m['phone_number']}\n"
 			)
 	else:
 		text = (
-			"✅ Request posted!\n"
-			f"From: {from_city}\n"
-			f"To: {to_city}\n"
-			f"Date: {date}\n"
-			f"Time: {time_pref}\n"
-			f"Seats: {seats}\n\n"
-			"❌ No matching trips found yet."
+			"✅ So'rov e'lon qilindi!\n"
+			f"Dan: {from_city}\n"
+			f"Ga: {to_city}\n"
+			f"Sana: {date}\n"
+			f"Vaqt: {time_pref}\n"
+			f"O'rindiqlar: {seats}\n\n"
+			"❌ Hozircha mos sayohatlar topilmadi. Ammo ular paydo bo‘lishi bilan sizni xabardor qilamiz!"
 		)
 
 	await message.answer(text, reply_markup=ReplyKeyboardRemove())

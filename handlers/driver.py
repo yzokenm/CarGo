@@ -2,11 +2,14 @@ from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from datetime import datetime, timedelta
+
 import re
+from datetime import datetime, timedelta
+
 import mysql.connector
 from database.config import DB_CONFIG, CITIES, SEAT_OPTIONS, PRICE_OPTIONS
 from database.db import get_connection
+from handlers import helper
 
 driver_router = Router()
 
@@ -19,22 +22,6 @@ class DriverForm(StatesGroup):
 	price = State()
 	phone_number = State()
 
-# ----- Keyboards -----
-def cities_kb(exclude: str | None = None) -> ReplyKeyboardMarkup:
-	cities = [city for city in CITIES if city != exclude] if exclude else CITIES
-	rows = [[KeyboardButton(text=city)] for city in cities]
-	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
-
-def seats_kb() -> ReplyKeyboardMarkup:
-	return ReplyKeyboardMarkup(
-		keyboard=[[KeyboardButton(text=str(n)) for n in SEAT_OPTIONS]],
-		resize_keyboard=True
-	)
-
-def price_kb() -> ReplyKeyboardMarkup:
-	rows = [[KeyboardButton(text=f"{p:,} UZS".replace(",", " "))] for p in PRICE_OPTIONS]
-	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
-
 def phone_request_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
@@ -44,13 +31,9 @@ def phone_request_kb():
 		one_time_keyboard=True
 	)
 
-def dates_kb(days: int = 3) -> ReplyKeyboardMarkup:
+def get_date_options(days: int = 3) -> list[str]:
 	today = datetime.now().date()
-	rows = [
-		[KeyboardButton(text=(today + timedelta(days=i)).strftime("%Y-%m-%d"))]
-		for i in range(days)
-	]
-	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
+	return [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
 
 
 def ensure_user_and_get_id(telegram_id: int, name: str) -> int:
@@ -74,6 +57,7 @@ def ensure_user_and_get_id(telegram_id: int, name: str) -> int:
 	user_id = cursor.fetchone()[0]
 	cursor.close()
 	connection.close()
+
 	return user_id
 
 def insert_trip(
@@ -122,70 +106,93 @@ def insert_trip(
 @driver_router.message(F.text == "🚖 I’m a Driver")
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.departure_city)
-	await message.answer("Select departure city:", reply_markup=cities_kb())
+	kb = helper.build_kb(CITIES, exclude="Shaxrixon", per_row=2)
+	await message.answer("Jo'nab ketish manzilini tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.departure_city)
 async def handle_departure_city(message: Message, state: FSMContext):
 	city = message.text.strip()
 	if city not in CITIES:
-		await message.answer("Please choose a city from the menu:", reply_markup=cities_kb())
+		kb = helper.build_kb(CITIES, per_row=2)
+		await message.answer("Iltimos, menyudagi shaharni tanlang:", reply_markup=kb)
 		return
+
 	await state.update_data(departure_city=city)
 	await state.set_state(DriverForm.destination_city)
-	await message.answer("Select destination city:", reply_markup=cities_kb(exclude=city))
+	kb = helper.build_kb(CITIES, exclude=city, per_row=2)
+	await message.answer("Yetib borish manzilini tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.destination_city)
 async def handle_destination_city(message: Message, state: FSMContext):
 	data = await state.get_data()
 	dep_city = data.get("departure_city")
 	dest = message.text.strip()
+
 	if dest not in CITIES or dest == dep_city:
-		await message.answer("Please choose a *different* city from the menu:", reply_markup=cities_kb(exclude=dep_city))
+		kb = helper.build_kb(CITIES, exclude=dep_city, per_row=2)
+		await message.answer("Menyudan *boshqa* shaharni tanlang:", reply_markup=kb)
 		return
+
 	await state.update_data(destination_city=dest)
 	await state.set_state(DriverForm.departure_date)
-	await message.answer("Pick your departure date:", reply_markup=dates_kb(days=3))
+	DATE_OPTIONS = get_date_options(days=3)
+	kb = helper.build_kb(DATE_OPTIONS, per_row=3)  # or dates_kb(days=3) if you kept it separate
+	await message.answer("Ketish sanasini tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.departure_date)
 async def handle_departure_date(message: Message, state: FSMContext):
 	raw = message.text.strip()
-	# Expecting YYYY-MM-DD
 	try:
 		dt = datetime.strptime(raw, "%Y-%m-%d").date()
 	except ValueError:
-		await message.answer("Please pick a date from the menu (format YYYY-MM-DD):", reply_markup=dates_kb(days=3))
+		DATE_OPTIONS = get_date_options(days=3)
+		kb = helper.build_kb(DATE_OPTIONS, per_row=3)
+		await message.answer("Iltimos, menyudagi sanani tanlang:", reply_markup=kb)
 		return
-	# Optional: only allow today..today+2
+
 	today = datetime.now().date()
 	if not (today <= dt <= today + timedelta(days=2)):
-		await message.answer("Please select one of the shown dates:", reply_markup=dates_kb(days=3))
+		DATE_OPTIONS = get_date_options(days=3)
+		kb = helper.build_kb(DATE_OPTIONS, per_row=3)
+		await message.answer("Iltimos, ko'rsatilgan sanalardan birini tanlang:", reply_markup=kb)
 		return
+
 	await state.update_data(departure_date=raw)
 	await state.set_state(DriverForm.seats_available)
-	await message.answer("Select number of available seats:", reply_markup=seats_kb())
+	kb = helper.build_kb(SEAT_OPTIONS, per_row=3)
+	await message.answer("Mavjud o'rindiqlar sonini tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.seats_available)
 async def handle_seats(message: Message, state: FSMContext):
 	txt = message.text.strip()
 	if not txt.isdigit() or int(txt) not in SEAT_OPTIONS:
-		await message.answer("Please choose seats from the menu:", reply_markup=seats_kb())
+		kb = helper.build_kb(SEAT_OPTIONS, per_row=3)
+		await message.answer("Iltimos, menyudagi o'rindiqlarni tanlang:", reply_markup=kb)
 		return
+
 	await state.update_data(seats_available=int(txt))
 	await state.set_state(DriverForm.price)
-	await message.answer("Select price per seat:", reply_markup=price_kb())
+	kb = helper.build_kb(PRICE_OPTIONS, per_row=2)  # you can tune per_row as needed
+	await message.answer("Bir o'rindiq uchun narxni tanlang:", reply_markup=kb)
+
 
 @driver_router.message(DriverForm.price)
 async def handle_price(message: Message, state: FSMContext):
-	# Accept "100 000 UZS" or "100000"
 	cleaned = re.sub(r"[^\d.]", "", message.text)
 	if not cleaned or not cleaned.isdigit():
-		# Restrict to menu for now
-		await message.answer("Please choose a price from the menu:", reply_markup=price_kb())
+		kb = helper.build_kb(PRICE_OPTIONS, per_row=2)
+		await message.answer("Iltimos, menyudagi narxni tanlang:", reply_markup=kb)
 		return
+
 	price = float(cleaned)
 	await state.update_data(price=price)
 	await state.set_state(DriverForm.phone_number)
-	await message.answer("📱 Please share your phone number:", reply_markup=phone_request_kb())
+	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=phone_request_kb())
+
 
 @driver_router.message(DriverForm.phone_number, F.content_type == "contact")
 async def save_phone(message: Message, state: FSMContext):
@@ -213,13 +220,13 @@ async def save_phone(message: Message, state: FSMContext):
 
 	price_label = f"{int(price):,} UZS".replace(",", " ")
 	await message.answer(
-		"✅ Trip posted successfully!\n"
-		f"From: {departure_city}\n"
-		f"To: {destination_city}\n"
-		f"Date: {departure_date}\n"
-		f"Seats: {seats}\n"
-		f"Price: {price_label}\n"
-		f"Phone: {phone_number}",
+		"✅ Safaringiz muvaffaqiyatli chop etildi!\n"
+		f"Dan: {departure_city}\n"
+		f"Ga: {destination_city}\n"
+		f"Sana: {departure_date}\n"
+		f"O'rindiqlar: {seats}\n"
+		f"Narx: {price_label}\n"
+		f"Telefon: {phone_number}",
 		reply_markup=ReplyKeyboardRemove()
 	)
 	await state.clear()

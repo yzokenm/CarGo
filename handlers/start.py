@@ -8,8 +8,6 @@ router = Router()
 @router.message(Command("start"))
 async def start_command(message: Message):
 	await message.answer(
-		"👋 Welcome to Shakhrikhan ↔ Tashkent Taxi Finder!\nPlease select your role:",
+		"Rolingizni tanlang:",
 		reply_markup=role_selection_kb()
 	)
-
-
