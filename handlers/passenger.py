@@ -42,7 +42,7 @@ def seats_kb() -> ReplyKeyboardMarkup:
 	)
 
 # --- DB Helpers ---
-def ensure_user_and_get_id(telegram_id: int, name: str) -> int:
+def ensure_user_and_get_id(telegram_id, name):
 	conn = get_connection()
 	cur = conn.cursor()
 	cur.execute("""
@@ -57,7 +57,7 @@ def ensure_user_and_get_id(telegram_id: int, name: str) -> int:
 	conn.close()
 	return user_id
 
-def insert_request(passenger_id: int, from_city: str, to_city: str, date_iso: str, time_pref: str, seats: int):
+def insert_request(passenger_id, from_city, to_city, date_iso, time_pref, seats):
 	conn = get_connection()
 	cur = conn.cursor()
 	cur.execute("""
@@ -140,36 +140,47 @@ async def handle_seats(message: Message, state: FSMContext):
 	time_pref = data["time_pref"]
 	seats = int(data["seats"])
 
+	# Save passenger + request
 	try:
 		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name)
 		request_id = insert_request(passenger_id, from_city, to_city, date, time_pref, seats)
-		matches = find_matching_trips(request_id)
+
+		# Get all registered drivers
+		conn = get_connection()
+		cur = conn.cursor(dictionary=True)
+		cur.execute("SELECT telegram_id, name FROM users WHERE role='driver'")
+		drivers = cur.fetchall()
+		cur.close()
+		conn.close()
+
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
 		await state.clear()
 		return
 
-	# If matches are found, show them
-	if matches:
-		text = "✅ So'rov e'lon qilindi!\n\n🚗 Mos sayohatlar topildi:\n"
-		for m in matches:
-			text += (
-				f"\n👤 Haydovchi: {m['name']}"
-				f"\n📍 Dan: {m['departure_city']} → To: {m['destination_city']}"
-				f"\n📅 Sana: {m['departure_time']}"
-				f"\n💺 Mavjud o'rindiqlar: {m['seats_available']}\n"
-				f"\n☎️ Aloqa uchun: {m['phone_number']}\n"
+	# Send request details to each driver
+	for d in drivers:
+		try:
+			await message.bot.send_message(
+				d["telegram_id"],
+				f"🚕 Yangi so'rov!\n"
+				f"👤 Yo'lovchi: {message.from_user.full_name}\n"
+				f"📍 {from_city} → {to_city}\n"
+				f"📅 Sana: {date}\n"
+				f"⏰ Vaqt: {time_pref}\n"
+				f"💺 O'rindiqlar: {seats}\n\n"
+				f"☎️ Passenger will wait for your call."
 			)
-	else:
-		text = (
-			"✅ So'rov e'lon qilindi!\n"
-			f"Dan: {from_city}\n"
-			f"Ga: {to_city}\n"
-			f"Sana: {date}\n"
-			f"Vaqt: {time_pref}\n"
-			f"O'rindiqlar: {seats}\n\n"
-			"❌ Hozircha mos sayohatlar topilmadi. Ammo ular paydo bo‘lishi bilan sizni xabardor qilamiz!"
-		)
+		except Exception:
+			# ignore errors if driver blocked the bot
+			pass
 
-	await message.answer(text, reply_markup=ReplyKeyboardRemove())
+	# Notify passenger
+	await message.answer(
+		"✅ Your ride request has been sent to nearby drivers.\n"
+		"☎️ A driver will contact you soon.",
+		reply_markup=ReplyKeyboardRemove()
+	)
+
 	await state.clear()
+

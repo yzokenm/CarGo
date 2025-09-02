@@ -4,8 +4,8 @@ def role_selection_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
 			[
-				KeyboardButton(text="🚖 I’m a Driver"),
-				KeyboardButton(text="🧍 I’m a Passenger")
+				KeyboardButton(text="🚖 Order a Ride"),
+				KeyboardButton(text="🧑‍✈️ Register as Driver")
 			]
 		],
 		resize_keyboard=True

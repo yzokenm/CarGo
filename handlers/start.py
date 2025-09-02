@@ -8,6 +8,6 @@ router = Router()
 @router.message(Command("start"))
 async def start_command(message: Message):
 	await message.answer(
-		"Rolingizni tanlang:",
+		"-Men ChoparTaksi tanlayman! Viloyatga ketmoqchimizsiz yoki viloyatdan poytaxtga kelmoqchmisiz, unda ChoparTaksi sizga yordam beradi. ChoparTaksi - Harakatdagi qulaylik🧡",
 		reply_markup=role_selection_kb()
 	)

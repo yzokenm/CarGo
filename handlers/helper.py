@@ -1,12 +1,7 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from typing import Any
 from datetime import datetime, timedelta
 
-def build_kb(
-	options: list[Any],
-	exclude: Any | None = None,
-	per_row: int = 2
-) -> ReplyKeyboardMarkup:
+def build_kb(options, exclude=None, per_row=None) -> ReplyKeyboardMarkup:
 	filtered = [opt for opt in options if opt != exclude]
 
 	# group into rows
@@ -21,7 +16,6 @@ def build_kb(
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
-
 def phone_request_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
@@ -31,7 +25,7 @@ def phone_request_kb():
 		one_time_keyboard=True
 	)
 
-def get_date_options(days: int = 3) -> list[str]:
+def get_date_options(days):
 	today = datetime.now().date()
 	options = []
 
@@ -51,7 +45,6 @@ def get_date_options(days: int = 3) -> list[str]:
 		options.append(f"{label} ({date.strftime('%Y-%m-%d')})")
 
 	return options
-
 
 def yes_no_kb():
 	return ReplyKeyboardMarkup(
