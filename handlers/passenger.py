@@ -50,24 +50,24 @@ def insert_request(passenger_id, from_city, to_city, date_iso, seats, passenger_
 
 
 # --- Flow ---
-@passenger_router.message(F.text == "🚖 Order a Ride")
+@passenger_router.message(F.text == "🚖 Taksi buyurtma berish")
 async def start_passenger_flow(message: Message, state: FSMContext):
 	await state.set_state(PassengerForm.from_city)
 	kb = helper.build_kb(CITIES, exclude="Shaxrixon", per_row=2)
-	await message.answer("Select departure city:", reply_markup=kb)
+	await message.answer("Ketish shahrini tanlang:", reply_markup=kb)
 
 @passenger_router.message(PassengerForm.from_city)
 async def handle_from_city(message: Message, state: FSMContext):
 	city = message.text.strip()
 	if city not in CITIES:
 		kb = helper.build_kb(CITIES, per_row=2)
-		await message.answer("Please choose a city from the menu:", reply_markup=kb)
+		await message.answer("Iltimos menyudagi shaharni tanlang:", reply_markup=kb)
 		return
 
 	await state.update_data(from_city=city)
 	await state.set_state(PassengerForm.to_city)
 	kb = helper.build_kb(CITIES, exclude=city, per_row=2)
-	await message.answer("Select destination city:", reply_markup=kb)
+	await message.answer("Yetib borish shaxrini tanlang:", reply_markup=kb)
 
 @passenger_router.message(PassengerForm.to_city)
 async def handle_to_city(message: Message, state: FSMContext):
@@ -76,13 +76,13 @@ async def handle_to_city(message: Message, state: FSMContext):
 	dest = message.text.strip()
 	if dest not in CITIES or dest == from_city:
 		kb = helper.build_kb(CITIES, exclude=from_city, per_row=2)
-		await message.answer("Please choose a *different* city:", reply_markup=kb)
+		await message.answer("Iltimos boshqa shaxarni tanlang:", reply_markup=kb)
 		return
 	await state.update_data(to_city=dest)
 	await state.set_state(PassengerForm.date)
 	DATE_OPTIONS = helper.get_date_options(days=3)
 	kb = helper.build_kb(DATE_OPTIONS, per_row=2)
-	await message.answer("Pick your travel date:", reply_markup=kb)
+	await message.answer("Sayohat sanasini tanlang:", reply_markup=kb)
 
 @passenger_router.message(PassengerForm.date)
 async def handle_date(message: Message, state: FSMContext):
@@ -108,14 +108,14 @@ async def handle_date(message: Message, state: FSMContext):
 	await state.update_data(date=dt.strftime("%Y-%m-%d"))
 	await state.set_state(PassengerForm.seats)
 	kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
-	await message.answer("Number of seats needed:", reply_markup=kb)
+	await message.answer("O'rindiqlar soni:", reply_markup=kb)
 
 @passenger_router.message(PassengerForm.seats)
 async def handle_seats(message: Message, state: FSMContext):
 	txt = message.text.strip()
 	if not txt.isdigit() or int(txt) not in SEAT_OPTIONS:
 		kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
-		await message.answer("Please choose from the menu:", reply_markup=kb)
+		await message.answer("Iltimos, menyudan tanlang:", reply_markup=kb)
 		return
 
 	await state.update_data(seats=int(txt))
@@ -123,7 +123,7 @@ async def handle_seats(message: Message, state: FSMContext):
 	# Ask for phone number
 	await state.set_state(PassengerForm.phone)
 	await message.answer(
-		"📱 Please enter your phone number (format: 998901234567):",
+		"📱 Telefon raqamingizni kiriting (format: +998901234567):",
 		reply_markup=ReplyKeyboardRemove()
 	)
 
@@ -132,14 +132,13 @@ async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
 	# Validate Uzbek phone format (simple check)
-	if not re.match(r"^998\d{9}$", phone):
-		await message.answer("❌ Invalid phone format. Example: 998901234567")
+	if not re.match(r"^\+?998\d{9}$", phone):
+		await message.answer("❌ Telefon formati noto‘g‘ri. Misol: +998901234567")
 		return
 
 	await state.update_data(phone=phone)
 
 	data = await state.get_data()
-	print(data)
 	from_city = data["from_city"]
 	to_city = data["to_city"]
 	date = data["date"]
@@ -149,7 +148,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	# Save passenger + request
 	try:
 		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name, phone)
-		insert_request(
+		request_id = insert_request(
 			passenger_id,
 			from_city,
 			to_city,
@@ -182,7 +181,8 @@ async def handle_phone(message: Message, state: FSMContext):
 				f"📍 {from_city} → {to_city}\n"
 				f"📅 Sana: {date}\n"
 				f"💺 O'rindiqlar: {seats}\n"
-				f"☎️ Telefon: {phone}\n"
+				f"☎️ Telefon: {phone}\n",
+				reply_markup=helper.driver_accept_kb(request_id)
 			)
 		except Exception:
 			# ignore errors if driver blocked the bot
@@ -190,8 +190,8 @@ async def handle_phone(message: Message, state: FSMContext):
 
 	# Notify passenger
 	await message.answer(
-		"✅ Your ride request has been sent to nearby drivers.\n"
-		"☎️ A driver will contact you soon.",
+		"✅ So'rovingiz qabul qilindi.\n"
+		"☎️ Tez orada haydovchi siz bilan bog'lanadi.",
 		reply_markup=ReplyKeyboardRemove()
 	)
 

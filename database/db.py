@@ -37,7 +37,7 @@ def init_db():
 			seats INT NOT NULL,
 			passenger_name VARCHAR(100) NOT NULL,
 			passenger_phone VARCHAR(20) NOT NULL,
-			status ENUM('pending', 'taken', 'completed', 'cancelled') DEFAULT 'pending',
+			status ENUM('pending', 'accepted', 'taken', 'completed', 'cancelled') DEFAULT 'pending',
 			taken_by_driver_id INT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

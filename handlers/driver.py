@@ -1,5 +1,5 @@
 from aiogram import Router, F
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
@@ -40,7 +40,7 @@ def ensure_driver_and_get_id(telegram_id, name, phone, city):
 
 
 # --- Route Start ---
-@driver_router.message(F.text == "🧑‍✈️ Register as Driver")
+@driver_router.message(F.text == "🧑‍✈️ Taksida ishlash")
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.city)
 	kb = helper.build_kb(CITIES, per_row=2)
@@ -87,3 +87,57 @@ async def handle_phone(message: Message, state: FSMContext):
 		reply_markup=ReplyKeyboardRemove()
 	)
 	await state.clear()
+
+
+@driver_router.callback_query(F.data.startswith("accept:"))
+async def handle_accept_order(callback: CallbackQuery):
+	request_id = int(callback.data.split(":")[1])
+	driver_telegram_id = callback.from_user.id
+	driver_name = callback.from_user.full_name
+
+	conn = get_connection()
+	cur = conn.cursor(dictionary=True)
+
+	try:
+		# Get driver ID
+		cur.execute("SELECT id FROM users WHERE telegram_id=%s AND role='driver'", (driver_telegram_id,))
+		driver_row = cur.fetchone()
+		if not driver_row:
+			await callback.answer("❌ Siz haydovchi sifatida ro'yxatdan o'tmagansiz.", show_alert=True)
+			return
+
+		driver_id = driver_row["id"]
+
+		# Try to accept only if still pending
+		cur.execute("""
+			UPDATE ride_requests
+			SET status='taken', taken_by_driver_id=%s
+			WHERE id=%s AND status='pending'
+		""", (driver_id, request_id))
+		conn.commit()
+
+		if cur.rowcount == 0:
+			# No row updated → someone else already accepted
+			await callback.answer("❌ Bu buyurtma allaqachon boshqa haydovchi tomonidan qabul qilindi. Iltimos keyingi so'rovni kuting!", show_alert=True)
+			return
+
+		# Get passenger details
+		cur.execute("""
+			SELECT passenger_name, passenger_phone, from_city, to_city, date
+			FROM ride_requests WHERE id=%s
+		""", (request_id,))
+		ride = cur.fetchone()
+
+	finally:
+		cur.close()
+		conn.close()
+
+	# Notify driver
+	await callback.message.edit_reply_markup()  # remove the button
+	await callback.message.answer(
+		f"✅ You accepted this order!\n"
+		f"👤 Passenger: {ride['passenger_name']} ({ride['passenger_phone']})\n"
+		f"📍 {ride['from_city']} → {ride['to_city']}\n"
+		f"📅 Date: {ride['date']}\n\n"
+		"☎️ Please contact the passenger directly."
+	)

@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 
 def build_kb(options, exclude=None, per_row=None) -> ReplyKeyboardMarkup:
@@ -45,3 +45,8 @@ def get_date_options(days):
 		options.append(f"{label} ({date.strftime('%Y-%m-%d')})")
 
 	return options
+
+def driver_accept_kb(request_id: int):
+	return InlineKeyboardMarkup(inline_keyboard=[
+		[InlineKeyboardButton(text="✅ Accept Order", callback_data=f"accept:{request_id}")]
+	])
