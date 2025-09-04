@@ -45,12 +45,3 @@ def get_date_options(days):
 		options.append(f"{label} ({date.strftime('%Y-%m-%d')})")
 
 	return options
-
-def yes_no_kb():
-	return ReplyKeyboardMarkup(
-		keyboard=[
-			[KeyboardButton(text="✅ Ha"), KeyboardButton(text="❌ Yo‘q")]
-		],
-		resize_keyboard=True
-	)
-

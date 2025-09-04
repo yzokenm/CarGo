@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, BotCommand
 
 def role_selection_kb():
 	return ReplyKeyboardMarkup(
@@ -10,3 +10,7 @@ def role_selection_kb():
 		],
 		resize_keyboard=True
 	)
+
+async def set_bot_commands(bot):
+	commands = [BotCommand(command="start", description="🔄 Qayta ishga tushirish")]
+	await bot.set_my_commands(commands)

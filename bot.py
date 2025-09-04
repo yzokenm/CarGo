@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from database.config import BOT_TOKEN
 from database.db import init_db
 from handlers import start, driver, passenger
-
+from keyboards import menus
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,6 +19,9 @@ async def main():
 	dp.include_router(start.router)
 	dp.include_router(driver.driver_router)
 	dp.include_router(passenger.passenger_router)
+
+	# Set persistent menu
+	# await menus.set_bot_commands(bot)
 
 	# Start polling
 	await dp.start_polling(bot)
