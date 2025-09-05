@@ -48,5 +48,10 @@ def get_date_options(days):
 
 def driver_accept_kb(request_id: int):
 	return InlineKeyboardMarkup(inline_keyboard=[
-		[InlineKeyboardButton(text="✅ Accept Order", callback_data=f"accept:{request_id}")]
+		[InlineKeyboardButton(text="✅ So'rovni qabul qilish", callback_data=f"accept:{request_id}")]
+	])
+
+def cancel_driver_kb(request_id):
+	return InlineKeyboardMarkup(inline_keyboard=[
+		[InlineKeyboardButton(text="❌ Haydovchini bekor qilish", callback_data=f"cancel_driver:{request_id}")]
 	])
