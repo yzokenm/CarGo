@@ -131,7 +131,7 @@ async def handle_seats(message: Message, state: FSMContext):
 async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
-	# Validate Uzbek phone format (simple check)
+	# Validate Uzbek phone format
 	if not re.match(r"^\+?998\d{9}$", phone):
 		await message.answer("❌ Telefon formati noto‘g‘ri. Misol: +998901234567")
 		return
@@ -145,9 +145,11 @@ async def handle_phone(message: Message, state: FSMContext):
 	seats = data["seats"]
 	phone = data["phone"]
 
-	# Save passenger + request
 	try:
+		# Save passenger
 		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name, phone)
+
+		# Save request
 		request_id = insert_request(
 			passenger_id,
 			from_city,
@@ -158,35 +160,45 @@ async def handle_phone(message: Message, state: FSMContext):
 			phone
 		)
 
-		# Get all registered drivers
+		# Fetch drivers
 		conn = get_connection()
 		cur = conn.cursor(dictionary=True)
-		cur.execute("SELECT telegram_id, name FROM users WHERE role='driver'")
+		cur.execute("SELECT id, telegram_id, name FROM users WHERE role='driver'")
 		drivers = cur.fetchall()
-		cur.close()
-		conn.close()
+
+		# Send to all drivers + insert into ride_notifications
+		for d in drivers:
+			try:
+				cur.execute("""
+					INSERT INTO ride_notifications (ride_id, driver_id)
+					VALUES (%s, %s)
+					ON DUPLICATE KEY UPDATE notified_at=NOW()
+				""", (request_id, d["id"]))
+				conn.commit()
+
+				await message.bot.send_message(
+					d["telegram_id"],
+					f"🚕 Yangi so'rov!\n"
+					f"👤 Yo'lovchi: {message.from_user.full_name}\n"
+					f"📍 {from_city} → {to_city}\n"
+					f"📅 Sana: {date}\n"
+					f"💺 O'rindiqlar: {seats}\n"
+					f"☎️ Telefon: {phone}\n",
+					reply_markup=helper.driver_accept_kb(request_id)
+				)
+				print(f"✅ Sent to driver {d['name']} ({d['telegram_id']})")
+
+			except Exception as e:
+				print(f"⚠️ Could not notify {d['name']}: {e}")
 
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e}")
 		await state.clear()
 		return
 
-	# Send request details to each driver
-	for d in drivers:
-		try:
-			await message.bot.send_message(
-				d["telegram_id"],
-				f"🚕 Yangi so'rov!\n"
-				f"👤 Yo'lovchi: {message.from_user.full_name}\n"
-				f"📍 {from_city} → {to_city}\n"
-				f"📅 Sana: {date}\n"
-				f"💺 O'rindiqlar: {seats}\n"
-				f"☎️ Telefon: {phone}\n",
-				reply_markup=helper.driver_accept_kb(request_id)
-			)
-		except Exception:
-			# ignore errors if driver blocked the bot
-			pass
+	finally:
+		cur.close()
+		conn.close()
 
 	# Notify passenger
 	await message.answer(
@@ -196,5 +208,6 @@ async def handle_phone(message: Message, state: FSMContext):
 	)
 
 	await state.clear()
+
 
 

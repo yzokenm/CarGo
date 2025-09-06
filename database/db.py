@@ -48,5 +48,20 @@ def init_db():
 		"""
 	)
 
+	# Ride notifications
+	cursor.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS ride_notifications (
+			id INT AUTO_INCREMENT PRIMARY KEY,
+			ride_id INT NOT NULL,
+			driver_id INT NOT NULL,
+			notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			UNIQUE KEY (ride_id, driver_id),
+			FOREIGN KEY (ride_id) REFERENCES ride_requests(id) ON DELETE CASCADE,
+			FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE CASCADE
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+		"""
+	)
+
 	connection.commit()
 	connection.close()
