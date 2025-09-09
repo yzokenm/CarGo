@@ -47,7 +47,6 @@ async def start_driver_flow(message: Message, state: FSMContext):
 	kb = helper.build_kb(CITIES, per_row=2)
 	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=kb)
 
-
 @driver_router.message(DriverForm.city)
 async def handle_city(message: Message, state: FSMContext):
 	city = message.text.strip()
@@ -59,7 +58,6 @@ async def handle_city(message: Message, state: FSMContext):
 	await state.update_data(city=city)
 	await state.set_state(DriverForm.phone_number)
 	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=helper.phone_request_kb())
-
 
 @driver_router.message(DriverForm.phone_number, F.contact)
 async def handle_phone(message: Message, state: FSMContext):
@@ -111,15 +109,18 @@ async def handle_accept_order(callback: CallbackQuery):
 			return
 
 		# Accept ride if still pending
-		cur.execute("""
-			UPDATE ride_requests
-			SET
-				status='taken',
-				taken_by_driver_id=%s
-			WHERE
-				id=%s AND
-				status='pending'
-		""", (driver_id, request_id))
+		cur.execute(
+			"""
+				UPDATE ride_requests
+				SET
+					status='taken',
+					taken_by_driver_id=%s
+				WHERE
+					id=%s AND
+					status='pending'
+			""",
+			(driver_id, request_id)
+		)
 		conn.commit()
 
 		if cur.rowcount == 0:
@@ -127,18 +128,21 @@ async def handle_accept_order(callback: CallbackQuery):
 			return
 
 		# Get passenger details
-		cur.execute("""
-			SELECT
-				ride_requests.passenger_name,
-				ride_requests.passenger_phone,
-				ride_requests.from_city,
-				ride_requests.to_city,
-				ride_requests.date,
-				users.telegram_id AS passenger_telegram_id
-			FROM ride_requests
-			JOIN users ON ride_requests.passenger_id = users.id
-			WHERE ride_requests.id=%s
-		""", (request_id,))
+		cur.execute(
+			"""
+				SELECT
+					ride_requests.passenger_name,
+					ride_requests.passenger_phone,
+					ride_requests.from_city,
+					ride_requests.to_city,
+					ride_requests.date,
+					users.telegram_id AS passenger_telegram_id
+				FROM ride_requests
+				JOIN users ON ride_requests.passenger_id = users.id
+				WHERE ride_requests.id=%s
+			""",
+			(request_id,)
+		)
 		ride = cur.fetchone()
 
 		# Log notification for this driver (consistency with passenger flow)
@@ -178,7 +182,7 @@ async def handle_accept_order(callback: CallbackQuery):
 	)
 
 
-# ---- Cancel diver (passenger action) ----
+# ---- Cancel driver (passenger action) ----
 @driver_router.callback_query(F.data.startswith("cancel_driver:"))
 async def handle_cancel_driver(callback: CallbackQuery):
 	request_id = int(callback.data.split(":")[1])
@@ -188,28 +192,36 @@ async def handle_cancel_driver(callback: CallbackQuery):
 	cur = conn.cursor(dictionary=True)
 	try:
 		# Get cancelled driver
-		cur.execute("""
-			SELECT
-				ride_requests.taken_by_driver_id,
-				users.telegram_id
-			FROM ride_requests
-			LEFT JOIN users ON ride_requests.taken_by_driver_id = users.id
-			WHERE ride_requests.id=%s AND ride_requests.status='taken'
-		""", (request_id,))
+		cur.execute(
+			"""
+				SELECT
+					ride_requests.taken_by_driver_id,
+					users.telegram_id
+				FROM ride_requests
+				LEFT JOIN users ON ride_requests.taken_by_driver_id = users.id
+				WHERE
+					ride_requests.id=%s AND
+					ride_requests.status='taken'
+			""",
+			(request_id,)
+		)
 		row = cur.fetchone()
 		cancelled_driver_id = row["taken_by_driver_id"] if row else None
 		cancelled_driver_telegram = row["telegram_id"] if row else None
 
 		# Reset ride
-		cur.execute("""
-			UPDATE ride_requests
-			SET
-				status='pending',
-				taken_by_driver_id=NULL
-			WHERE
-				id=%s AND
-				status='taken'
-		""", (request_id,))
+		cur.execute(
+			"""
+				UPDATE ride_requests
+				SET
+					status='pending',
+					taken_by_driver_id=NULL
+				WHERE
+					id=%s AND
+					status='taken'
+			""",
+			(request_id,)
+		)
 		conn.commit()
 
 		# Delete all old notifications for this ride
@@ -217,26 +229,27 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		conn.commit()
 
 		# Fetch ride
-		cur.execute("""
-			SELECT
-				ride_requests.id,
-				ride_requests.passenger_name,
-				ride_requests.passenger_phone,
-				ride_requests.from_city,
-				ride_requests.to_city,
-				ride_requests.date,
-				users.telegram_id AS passenger_telegram_id
-			FROM ride_requests
-			JOIN users ON users.id = ride_requests.passenger_id
-			WHERE ride_requests.id=%s
-		""", (request_id,))
+		cur.execute(
+			"""
+				SELECT
+					ride_requests.id,
+					ride_requests.passenger_name,
+					ride_requests.passenger_phone,
+					ride_requests.from_city,
+					ride_requests.to_city,
+					ride_requests.date,
+					users.telegram_id AS passenger_telegram_id
+				FROM ride_requests
+				JOIN users ON users.id = ride_requests.passenger_id
+				WHERE ride_requests.id=%s
+			""",
+			(request_id,)
+		)
 		ride = cur.fetchone()
 
 		# Get all drivers (optional: exclude cancelled driver)
-		if cancelled_driver_id:
-			cur.execute("SELECT id, telegram_id FROM users WHERE role='driver' AND id != %s", (cancelled_driver_id,))
-		else:
-			cur.execute("SELECT id, telegram_id FROM users WHERE role='driver'")
+		if cancelled_driver_id: cur.execute("SELECT id, telegram_id FROM users WHERE role='driver' AND id != %s", (cancelled_driver_id,))
+		else: cur.execute("SELECT id, telegram_id FROM users WHERE role='driver'")
 		drivers = cur.fetchall()
 
 	finally:
@@ -253,16 +266,15 @@ async def handle_cancel_driver(callback: CallbackQuery):
 				chat_id=cancelled_driver_telegram,
 				text="⚠️ Yo‘lovchi sayohatingizni bekor qildi. So'rov qayta faollashtirildi."
 			)
-		except:
-			pass
+		except: pass
 
 	# Re-send ride to all available drivers
 	conn = get_connection()
 	cur = conn.cursor(dictionary=True)
-	for d in drivers:
+	for driver in drivers:
 		try:
 			await callback.bot.send_message(
-				d["telegram_id"],
+				driver["telegram_id"],
 				f"🚕 Yangi so'rov!\n"
 				f"👤 Yo'lovchi: {ride['passenger_name']}\n"
 				f"📍 {ride['from_city']} → {ride['to_city']}\n"
@@ -270,12 +282,15 @@ async def handle_cancel_driver(callback: CallbackQuery):
 				f"☎️ Telefon: {ride['passenger_phone']}\n",
 				reply_markup=helper.driver_accept_kb(ride['id'])
 			)
-			cur.execute("""
-				INSERT INTO ride_notifications (ride_id, driver_id)
-				VALUES (%s, %s)
-			""", (ride['id'], d['id']))
+			cur.execute(
+				"""
+					INSERT INTO ride_notifications (ride_id, driver_id)
+					VALUES (%s, %s)
+				""",
+				(ride['id'], driver['id'])
+			)
 			conn.commit()
-		except Exception as e:
-			print(f"⚠️ Could not notify driver {d['id']}: {e}")
+		except Exception as e: print(f"⚠️ Could not notify driver {driver['id']}: {e}")
+
 	cur.close()
 	conn.close()

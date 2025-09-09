@@ -21,7 +21,7 @@ async def main():
 	dp.include_router(passenger.passenger_router)
 
 	# Set persistent menu
-	# await menus.set_bot_commands(bot)
+	await menus.set_bot_commands(bot)
 
 	# Start polling
 	await dp.start_polling(bot)

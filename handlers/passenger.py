@@ -1,16 +1,20 @@
+import re
+from datetime import datetime, timedelta
+
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from datetime import datetime, timedelta
+
 import mysql.connector
-from database.config import DB_CONFIG, CITIES, SEAT_OPTIONS, TIME_OPTIONS
+
+from database.config import DB_CONFIG, CITIES, SEAT_OPTIONS
 from database.db import get_connection
-import re
 from handlers import helper
 
 passenger_router = Router()
 
+# ----- States -----
 class PassengerForm(StatesGroup):
 	from_city = State()
 	to_city = State()
@@ -22,11 +26,14 @@ class PassengerForm(StatesGroup):
 def ensure_user_and_get_id(telegram_id, name, phone):
 	conn = get_connection()
 	cur = conn.cursor()
-	cur.execute("""
-		INSERT INTO users (telegram_id, role, name, phone_number)
-		VALUES (%s, 'passenger', %s, %s)
-		ON DUPLICATE KEY UPDATE role=VALUES(role), name=VALUES(name), phone_number=VALUES(phone_number)
-	""", (telegram_id, name, phone))
+	cur.execute(
+		"""
+			INSERT INTO users (telegram_id, role, name, phone_number)
+			VALUES (%s, 'passenger', %s, %s)
+			ON DUPLICATE KEY UPDATE role=VALUES(role), name=VALUES(name), phone_number=VALUES(phone_number)
+		""",
+		(telegram_id, name, phone)
+	)
 	conn.commit()
 	cur.execute("SELECT id FROM users WHERE telegram_id=%s", (telegram_id,))
 	user_id = cur.fetchone()[0]
@@ -37,11 +44,31 @@ def ensure_user_and_get_id(telegram_id, name, phone):
 def insert_request(passenger_id, from_city, to_city, date_iso, seats, passenger_name, passenger_phone):
 	conn = get_connection()
 	cur = conn.cursor()
-	cur.execute("""
-		INSERT INTO ride_requests
-		(passenger_id, from_city, to_city, date, seats, passenger_name, passenger_phone, status)
-		VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
-	""", (passenger_id, from_city, to_city, date_iso, seats, passenger_name, passenger_phone))
+	cur.execute(
+		"""
+			INSERT INTO ride_requests
+			(
+				passenger_id,
+				from_city,
+				to_city,
+				date,
+				seats,
+				passenger_name,
+				passenger_phone,
+				status
+			)
+			VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
+		""",
+		(
+			passenger_id,
+			from_city,
+			to_city,
+			date_iso,
+			seats,
+			passenger_name,
+			passenger_phone
+		)
+	)
 	conn.commit()
 	request_id = cur.lastrowid
 	cur.close()
@@ -167,17 +194,20 @@ async def handle_phone(message: Message, state: FSMContext):
 		drivers = cur.fetchall()
 
 		# Send to all drivers + insert into ride_notifications
-		for d in drivers:
+		for driver in drivers:
 			try:
-				cur.execute("""
-					INSERT INTO ride_notifications (ride_id, driver_id)
-					VALUES (%s, %s)
-					ON DUPLICATE KEY UPDATE notified_at=NOW()
-				""", (request_id, d["id"]))
+				cur.execute(
+					"""
+						INSERT INTO ride_notifications (ride_id, driver_id)
+						VALUES (%s, %s)
+						ON DUPLICATE KEY UPDATE notified_at=NOW()
+					""",
+					(request_id, driver["id"])
+				)
 				conn.commit()
 
 				await message.bot.send_message(
-					d["telegram_id"],
+					driver["telegram_id"],
 					f"🚕 Yangi so'rov!\n"
 					f"👤 Yo'lovchi: {message.from_user.full_name}\n"
 					f"📍 {from_city} → {to_city}\n"
@@ -186,10 +216,9 @@ async def handle_phone(message: Message, state: FSMContext):
 					f"☎️ Telefon: {phone}\n",
 					reply_markup=helper.driver_accept_kb(request_id)
 				)
-				print(f"✅ Sent to driver {d['name']} ({d['telegram_id']})")
+				print(f"✅ Sent to driver {driver['name']} ({driver['telegram_id']})")
 
-			except Exception as e:
-				print(f"⚠️ Could not notify {d['name']}: {e}")
+			except Exception as e: print(f"⚠️ Could not notify {driver['name']}: {e}")
 
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e}")
@@ -208,6 +237,3 @@ async def handle_phone(message: Message, state: FSMContext):
 	)
 
 	await state.clear()
-
-
-
