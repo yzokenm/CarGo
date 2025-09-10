@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 import mysql.connector
 
-from database.config import DB_CONFIG, CITIES, SEAT_OPTIONS
+from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS
 from database.db import get_connection
 from handlers import helper
 
@@ -16,136 +16,76 @@ passenger_router = Router()
 
 # ----- States -----
 class PassengerForm(StatesGroup):
-	from_city = State()
-	to_city = State()
-	date = State()
+	direction = State()
+	route = State()
 	seats = State()
 	phone = State()
-
-# --- DB Helpers ---
-def ensure_user_and_get_id(telegram_id, name, phone):
-	conn = get_connection()
-	cur = conn.cursor()
-	cur.execute(
-		"""
-			INSERT INTO users (telegram_id, role, name, phone_number)
-			VALUES (%s, 'passenger', %s, %s)
-			ON DUPLICATE KEY UPDATE role=VALUES(role), name=VALUES(name), phone_number=VALUES(phone_number)
-		""",
-		(telegram_id, name, phone)
-	)
-	conn.commit()
-	cur.execute("SELECT id FROM users WHERE telegram_id=%s", (telegram_id,))
-	user_id = cur.fetchone()[0]
-	cur.close()
-	conn.close()
-	return user_id
-
-def insert_request(passenger_id, from_city, to_city, date_iso, seats, passenger_name, passenger_phone):
-	conn = get_connection()
-	cur = conn.cursor()
-	cur.execute(
-		"""
-			INSERT INTO ride_requests
-			(
-				passenger_id,
-				from_city,
-				to_city,
-				date,
-				seats,
-				passenger_name,
-				passenger_phone,
-				status
-			)
-			VALUES (%s, %s, %s, %s, %s, %s, %s, 'pending')
-		""",
-		(
-			passenger_id,
-			from_city,
-			to_city,
-			date_iso,
-			seats,
-			passenger_name,
-			passenger_phone
-		)
-	)
-	conn.commit()
-	request_id = cur.lastrowid
-	cur.close()
-	conn.close()
-	return request_id
-
 
 # --- Flow ---
 @passenger_router.message(F.text == "🚖 Taksi buyurtma berish")
 async def start_passenger_flow(message: Message, state: FSMContext):
-	await state.set_state(PassengerForm.from_city)
-	kb = helper.build_kb(CITIES, exclude="Shaxrixon", per_row=2)
-	await message.answer("Ketish shahrini tanlang:", reply_markup=kb)
+	await state.set_state(PassengerForm.direction)
+	kb = helper.build_kb(DIRECTIONS, per_row=2)
+	await message.answer("Yo‘nalishni tanlang:", reply_markup=kb)
 
-@passenger_router.message(PassengerForm.from_city)
+
+@passenger_router.message(PassengerForm.direction)
+async def handle_direction(message: Message, state: FSMContext):
+	direction = message.text.strip()
+
+	if direction not in DIRECTIONS:
+		await message.answer(
+			"❌ Noto‘g‘ri tanlov. Iltimos, menyudan tanlang:",
+			reply_markup=helper.build_kb(DIRECTIONS, per_row=1)
+		)
+		return
+
+	await state.update_data(direction=direction)
+
+	if direction == "🚖 Viloyatdan → Toshkentga":
+		await state.set_state(PassengerForm.route)
+		await message.answer(
+			"Qaysi shaxardan Toshkentga ketasiz?",
+			reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
+		)
+
+	elif direction == "🚖 Toshkentdan → Viloyatga":
+		await state.set_state(PassengerForm.route)
+		await message.answer(
+			"Toshkentdan qaysi shaxarga ketasiz?",
+			reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2)
+		)
+
+
+@passenger_router.message(PassengerForm.route)
 async def handle_from_city(message: Message, state: FSMContext):
-	city = message.text.strip()
-	if city not in CITIES:
-		kb = helper.build_kb(CITIES, per_row=2)
-		await message.answer("Iltimos menyudagi shaharni tanlang:", reply_markup=kb)
+	route = message.text.strip()
+
+	if route not in (CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT):
+		await message.answer(
+			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang:",
+			reply_markup=helper.build_kb(CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT, per_row=2)
+		)
 		return
 
-	await state.update_data(from_city=city)
-	await state.set_state(PassengerForm.to_city)
-	kb = helper.build_kb(CITIES, exclude=city, per_row=2)
-	await message.answer("Yetib borish shaxrini tanlang:", reply_markup=kb)
+	# Split into from/to cities
+	from_city, to_city = route.split(" → ")
+	await state.update_data(from_city=from_city, to_city=to_city)
 
-@passenger_router.message(PassengerForm.to_city)
-async def handle_to_city(message: Message, state: FSMContext):
-	data = await state.get_data()
-	from_city = data.get("from_city")
-	dest = message.text.strip()
-	if dest not in CITIES or dest == from_city:
-		kb = helper.build_kb(CITIES, exclude=from_city, per_row=2)
-		await message.answer("Iltimos boshqa shaxarni tanlang:", reply_markup=kb)
-		return
-	await state.update_data(to_city=dest)
-	await state.set_state(PassengerForm.date)
-	DATE_OPTIONS = helper.get_date_options(days=3)
-	kb = helper.build_kb(DATE_OPTIONS, per_row=2)
-	await message.answer("Sayohat sanasini tanlang:", reply_markup=kb)
-
-@passenger_router.message(PassengerForm.date)
-async def handle_date(message: Message, state: FSMContext):
-	raw = message.text.strip()
-
-	# Try to extract date inside parentheses
-	match = re.search(r"\((\d{4}-\d{2}-\d{2})\)", raw)
-	if not match:
-		DATE_OPTIONS = helper.get_date_options(days=3)
-		kb = helper.build_kb(DATE_OPTIONS, per_row=2)
-		await message.answer("Iltimos, menyudagi sanani tanlang:", reply_markup=kb)
-		return
-
-	dt = datetime.strptime(match.group(1), "%Y-%m-%d").date()
-	today = datetime.now().date()
-
-	if not (today <= dt <= today + timedelta(days=2)):
-		DATE_OPTIONS = helper.get_date_options(days=3)
-		kb = helper.build_kb(DATE_OPTIONS, per_row=2)
-		await message.answer("Iltimos, ko'rsatilgan sanalardan birini tanlang:", reply_markup=kb)
-		return
-
-	await state.update_data(date=dt.strftime("%Y-%m-%d"))
 	await state.set_state(PassengerForm.seats)
 	kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
 	await message.answer("O'rindiqlar soni:", reply_markup=kb)
 
+
 @passenger_router.message(PassengerForm.seats)
 async def handle_seats(message: Message, state: FSMContext):
-	txt = message.text.strip()
-	if not txt.isdigit() or int(txt) not in SEAT_OPTIONS:
+	seat = int(message.text.strip())
+	if seat not in SEAT_OPTIONS:
 		kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
 		await message.answer("Iltimos, menyudan tanlang:", reply_markup=kb)
 		return
 
-	await state.update_data(seats=int(txt))
+	await state.update_data(seats=seat)
 
 	# Ask for phone number
 	await state.set_state(PassengerForm.phone)
@@ -154,43 +94,48 @@ async def handle_seats(message: Message, state: FSMContext):
 		reply_markup=ReplyKeyboardRemove()
 	)
 
+
 @passenger_router.message(PassengerForm.phone)
 async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
-	# Validate Uzbek phone format
+	# Check if phone_number valid(+9989901234567)
 	if not re.match(r"^\+?998\d{9}$", phone):
 		await message.answer("❌ Telefon formati noto‘g‘ri. Misol: +998901234567")
 		return
 
 	await state.update_data(phone=phone)
-
 	data = await state.get_data()
-	from_city = data["from_city"]
-	to_city = data["to_city"]
-	date = data["date"]
-	seats = data["seats"]
-	phone = data["phone"]
 
 	try:
-		# Save passenger
-		passenger_id = ensure_user_and_get_id(message.from_user.id, message.from_user.full_name, phone)
+		# Get passenger id
+		passenger_id = helper.ensure_passenger_and_get_id(message.from_user.id, message.from_user.full_name, phone)
 
-		# Save request
-		request_id = insert_request(
+		# Save passenger ride
+		request_id = helper.save_passenger_ride(
 			passenger_id,
-			from_city,
-			to_city,
-			date,
-			seats,
+			data["from_city"],
+			data["to_city"],
+			data["seats"],
 			message.from_user.full_name,
-			phone
+			data["phone"]
 		)
 
 		# Fetch drivers
 		conn = get_connection()
 		cur = conn.cursor(dictionary=True)
-		cur.execute("SELECT id, telegram_id, name FROM users WHERE role='driver'")
+
+		cur.execute(
+			"""
+				SELECT id, telegram_id, name
+				FROM users
+				WHERE
+					role='driver' AND
+					from_city=%s AND
+					to_city=%s
+			""",
+			(data["from_city"], data["to_city"])
+		)
 		drivers = cur.fetchall()
 
 		# Send to all drivers + insert into ride_notifications
@@ -211,7 +156,6 @@ async def handle_phone(message: Message, state: FSMContext):
 					f"🚕 Yangi so'rov!\n"
 					f"👤 Yo'lovchi: {message.from_user.full_name}\n"
 					f"📍 {from_city} → {to_city}\n"
-					f"📅 Sana: {date}\n"
 					f"💺 O'rindiqlar: {seats}\n"
 					f"☎️ Telefon: {phone}\n",
 					reply_markup=helper.driver_accept_kb(request_id)
@@ -235,5 +179,4 @@ async def handle_phone(message: Message, state: FSMContext):
 		"☎️ Tez orada haydovchi siz bilan bog'lanadi.",
 		reply_markup=ReplyKeyboardRemove()
 	)
-
 	await state.clear()

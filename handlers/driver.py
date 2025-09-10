@@ -6,73 +6,55 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from database.config import CITIES
+from database.config import CITIES_TO_TASHKENT
 from handlers import helper
 
 driver_router = Router()
 
 # ----- States -----
 class DriverForm(StatesGroup):
-	city = State()
+	route = State()
 	phone_number = State()
-
-# Ensure user exists (driver)
-def ensure_driver_and_get_id(telegram_id, name, phone, city):
-	conn = get_connection()
-	cur = conn.cursor()
-	cur.execute(
-		"""
-		INSERT INTO users (telegram_id, role, name, phone_number, city)
-		VALUES (%s, 'driver', %s, %s, %s)
-		ON DUPLICATE KEY UPDATE
-			role='driver',
-			name=VALUES(name),
-			phone_number=VALUES(phone_number),
-			city=VALUES(city)
-		""",
-		(telegram_id, name, phone, city)
-	)
-	conn.commit()
-	cur.execute("SELECT id FROM users WHERE telegram_id=%s", (telegram_id,))
-	user_id = cur.fetchone()[0]
-	cur.close()
-	conn.close()
-	return user_id
-
 
 # --- Route Start ---
 @driver_router.message(F.text == "🧑‍✈️ Taksida ishlash")
 async def start_driver_flow(message: Message, state: FSMContext):
-	await state.set_state(DriverForm.city)
-	kb = helper.build_kb(CITIES, per_row=2)
+	await state.set_state(DriverForm.route)
+	kb = helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
 	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=kb)
 
-@driver_router.message(DriverForm.city)
-async def handle_city(message: Message, state: FSMContext):
-	city = message.text.strip()
-	if city not in CITIES:
-		kb = helper.build_kb(CITIES, per_row=2)
-		await message.answer("❌ Noto‘g‘ri shahar. Iltimos, menyudagi shaharni tanlang:", reply_markup=kb)
+@driver_router.message(DriverForm.route)
+async def handle_route(message: Message, state: FSMContext):
+	route = message.text.strip()
+	if route not in CITIES_TO_TASHKENT:
+		await message.answer(
+			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang:",
+			reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
+		)
 		return
 
-	await state.update_data(city=city)
+	# Split into from/to cities
+	from_city, to_city = route.split(" → ")
+	await state.update_data(from_city=from_city, to_city=to_city)
+
+	# move to next step
 	await state.set_state(DriverForm.phone_number)
 	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=helper.phone_request_kb())
+
 
 @driver_router.message(DriverForm.phone_number, F.contact)
 async def handle_phone(message: Message, state: FSMContext):
 	phone_number = message.contact.phone_number if message.contact else message.text
 	await state.update_data(phone_number=phone_number)
-
 	data = await state.get_data()
-	city = data["city"]
 
 	try:
-		ensure_driver_and_get_id(
+		helper.ensure_driver(
 			telegram_id=message.from_user.id,
 			name=message.from_user.full_name,
 			phone=phone_number,
-			city=city
+			from_city=data["from_city"],
+			to_city=data["to_city"]
 		)
 	except mysql.connector.Error as e:
 		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
@@ -83,7 +65,7 @@ async def handle_phone(message: Message, state: FSMContext):
 		f"✅ Siz muvaffaqiyatli haydovchi sifatida ro‘yxatdan o‘tdingiz!\n\n"
 		f"👤 Ism: {message.from_user.full_name}\n"
 		f"📞 Telefon: {phone_number}\n"
-		f"🏙 Shahar: {city}",
+		f"🏙 Qatnov yo'nalish: {from_city} → {to_city}",
 		reply_markup=ReplyKeyboardRemove()
 	)
 	await state.clear()
@@ -100,7 +82,21 @@ async def handle_accept_order(callback: CallbackQuery):
 
 	try:
 		# Get driver Info
-		cur.execute("SELECT id, name, phone_number, city FROM users WHERE telegram_id=%s AND role='driver'", (driver_telegram_id,))
+		cur.execute(
+			"""
+				SELECT
+					id,
+					name,
+					phone_number,
+					from_city,
+					to_city
+				FROM users
+				WHERE
+					telegram_id=%s AND
+					role='driver'
+			""",
+			(driver_telegram_id,)
+		)
 		driver_row = cur.fetchone()
 
 		if driver_row: driver_id = driver_row["id"]
@@ -135,7 +131,7 @@ async def handle_accept_order(callback: CallbackQuery):
 					ride_requests.passenger_phone,
 					ride_requests.from_city,
 					ride_requests.to_city,
-					ride_requests.date,
+					ride_requests.seats
 					users.telegram_id AS passenger_telegram_id
 				FROM ride_requests
 				JOIN users ON ride_requests.passenger_id = users.id
@@ -146,11 +142,13 @@ async def handle_accept_order(callback: CallbackQuery):
 		ride = cur.fetchone()
 
 		# Log notification for this driver (consistency with passenger flow)
-		cur.execute("""
-			INSERT INTO ride_notifications (ride_id, driver_id)
-			VALUES (%s, %s)
-			ON DUPLICATE KEY UPDATE notified_at=NOW()
-		""", (request_id, driver_id))
+		cur.execute(
+			"""
+				INSERT INTO ride_notifications (ride_id, driver_id)
+				VALUES (%s, %s)
+				ON DUPLICATE KEY UPDATE notified_at=NOW()
+			""", (request_id, driver_id)
+		)
 		conn.commit()
 
 	finally:
@@ -163,8 +161,8 @@ async def handle_accept_order(callback: CallbackQuery):
 		f"✅ Siz ushbu so'rovni qabul qildingiz!\n"
 		f"👤 Yo'lovchi: {ride['passenger_name']}\n"
 		f"☎️ Telefon: {ride['passenger_phone']}\n"
-		f"📍 {ride['from_city']} → {ride['to_city']}\n"
-		f"📅 Sana: {ride['date']}\n\n"
+		f"📍 Yo'nalish: {ride['from_city']} → {ride['to_city']}\n"
+		f"💺 Kerakli o'rindiqlar: {ride['seats']}\n"
 		"☎️ Iltimos, yo'lovchi bilan bog'laning."
 	)
 
@@ -237,7 +235,7 @@ async def handle_cancel_driver(callback: CallbackQuery):
 					ride_requests.passenger_phone,
 					ride_requests.from_city,
 					ride_requests.to_city,
-					ride_requests.date,
+					ride_requests.seats
 					users.telegram_id AS passenger_telegram_id
 				FROM ride_requests
 				JOIN users ON users.id = ride_requests.passenger_id
@@ -277,9 +275,8 @@ async def handle_cancel_driver(callback: CallbackQuery):
 				driver["telegram_id"],
 				f"🚕 Yangi so'rov!\n"
 				f"👤 Yo'lovchi: {ride['passenger_name']}\n"
-				f"📍 {ride['from_city']} → {ride['to_city']}\n"
-				f"📅 Sana: {ride['date']}\n"
-				f"☎️ Telefon: {ride['passenger_phone']}\n",
+				f"📍 Yo'nalish: {ride['from_city']} → {ride['to_city']}\n"
+				f"💺 Kerakli o'rindiqlar: {ride['seats']}\n",
 				reply_markup=helper.driver_accept_kb(ride['id'])
 			)
 			cur.execute(

@@ -1,18 +1,19 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import datetime, timedelta
 
-def build_kb(options, exclude=None, per_row=None) -> ReplyKeyboardMarkup:
-	filtered = [opt for opt in options if opt != exclude]
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
+from database.db import get_connection
+
+def build_kb(options, per_row=None) -> ReplyKeyboardMarkup:
 	# group into rows
-	rows = []
-	row = []
-	for opt in filtered:
+	rows, row = [], []
+	for opt in options:
 		row.append(KeyboardButton(text=str(opt)))
-		if len(row) == per_row:
+		if per_row and len(row) == per_row:
 			rows.append(row)
 			row = []
-	if row: rows.append(row)
+	if row:
+		rows.append(row)
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
@@ -25,33 +26,108 @@ def phone_request_kb():
 		one_time_keyboard=True
 	)
 
-def get_date_options(days):
-	today = datetime.now().date()
-	options = []
-
-	for i in range(days):
-		date = today + timedelta(days=i)
-
-		match i:
-			case 0:
-				label = "Bugun"
-			case 1:
-				label = "Ertaga"
-			case 2:
-				label = "Indinga"
-			case _:
-				label = date.strftime("%A")
-
-		options.append(f"{label} ({date.strftime('%Y-%m-%d')})")
-
-	return options
-
 def driver_accept_kb(request_id: int):
 	return InlineKeyboardMarkup(inline_keyboard=[
-		[InlineKeyboardButton(text="✅ So'rovni qabul qilish", callback_data=f"accept:{request_id}")]
+		[
+			InlineKeyboardButton(
+				text="✅ So'rovni qabul qilish",
+				callback_data=f"accept:{request_id}"
+			)
+		]
 	])
 
 def cancel_driver_kb(request_id):
 	return InlineKeyboardMarkup(inline_keyboard=[
-		[InlineKeyboardButton(text="❌ Haydovchini bekor qilish", callback_data=f"cancel_driver:{request_id}")]
+		[
+			InlineKeyboardButton(
+				text="❌ Haydovchini bekor qilish",
+				callback_data=f"cancel_driver:{request_id}"
+			)
+		]
 	])
+
+# Ensure user exists (driver)
+def ensure_driver(telegram_id, name, phone, from_city, to_city):
+	conn = get_connection()
+	cur = conn.cursor()
+
+	cur.execute(
+		"""
+			INSERT INTO users (telegram_id, role, name, phone_number, from_city, to_city)
+			VALUES (%s, 'driver', %s, %s, %s, %s)
+			ON DUPLICATE KEY UPDATE
+				role='driver',
+				name=VALUES(name),
+				phone_number=VALUES(phone_number),
+				from_city=VALUES(from_city),
+				to_city=VALUES(to_city)
+		""",
+		(telegram_id, name, phone, from_city, to_city)
+	)
+	conn.commit()
+	cur.close()
+	conn.close()
+
+# --- DB Helpers ---
+def ensure_passenger_and_get_id(telegram_id, name, phone):
+	conn = get_connection()
+	cur = conn.cursor()
+	cur.execute(
+		"""
+			INSERT INTO users (telegram_id, role, name, phone_number)
+			VALUES (%s, 'passenger', %s, %s)
+			ON DUPLICATE KEY UPDATE
+				role = VALUES(role),
+				name = VALUES(name),
+				phone_number = VALUES(phone_number),
+				id = LAST_INSERT_ID(id)
+		""",
+		(telegram_id, name, phone)
+	)
+	conn.commit()
+
+	user_id = cur.lastrowid
+	cur.close()
+	conn.close()
+
+	return user_id
+
+def save_passenger_ride(
+	passenger_id,
+	from_city,
+	to_city,
+	seats,
+	passenger_name,
+	passenger_phone
+):
+	conn = get_connection()
+	cur = conn.cursor()
+	cur.execute(
+		"""
+			INSERT INTO ride_requests
+			(
+				passenger_id,
+				from_city,
+				to_city,
+				seats,
+				passenger_name,
+				passenger_phone,
+				status
+			)
+			VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+		""",
+		(
+			passenger_id,
+			from_city,
+			to_city,
+			seats,
+			passenger_name,
+			passenger_phone
+		)
+	)
+	conn.commit()
+	request_id = cur.lastrowid
+	cur.close()
+	conn.close()
+	return request_id
+
