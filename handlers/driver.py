@@ -23,6 +23,7 @@ async def start_driver_flow(message: Message, state: FSMContext):
 	kb = helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
 	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=kb)
 
+
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
 	route = message.text.strip()
@@ -49,7 +50,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	data = await state.get_data()
 
 	try:
-		helper.ensure_driver(
+		helper.save_driver(
 			telegram_id=message.from_user.id,
 			name=message.from_user.full_name,
 			phone=phone_number,

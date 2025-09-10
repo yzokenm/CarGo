@@ -46,8 +46,10 @@ def cancel_driver_kb(request_id):
 		]
 	])
 
+
+# --- DB Helpers ---
 # Ensure user exists (driver)
-def ensure_driver(telegram_id, name, phone, from_city, to_city):
+def save_driver(telegram_id, name, phone, from_city, to_city):
 	conn = get_connection()
 	cur = conn.cursor()
 
@@ -68,27 +70,29 @@ def ensure_driver(telegram_id, name, phone, from_city, to_city):
 	cur.close()
 	conn.close()
 
-# --- DB Helpers ---
-def ensure_passenger_and_get_id(telegram_id, name, phone):
+def save_passenger(telegram_id, name, phone):
 	conn = get_connection()
 	cur = conn.cursor()
-	cur.execute(
-		"""
-			INSERT INTO users (telegram_id, role, name, phone_number)
-			VALUES (%s, 'passenger', %s, %s)
-			ON DUPLICATE KEY UPDATE
-				role = VALUES(role),
-				name = VALUES(name),
-				phone_number = VALUES(phone_number),
-				id = LAST_INSERT_ID(id)
-		""",
-		(telegram_id, name, phone)
-	)
-	conn.commit()
+	try:
+		cur.execute(
+			"""
+				INSERT INTO users (telegram_id, role, name, phone_number)
+				VALUES (%s, 'passenger', %s, %s)
+				ON DUPLICATE KEY UPDATE
+					role = VALUES(role),
+					name = VALUES(name),
+					phone_number = VALUES(phone_number),
+					id = LAST_INSERT_ID(id)
+			""",
+			(telegram_id, name, phone)
+		)
+		conn.commit()
+		user_id = cur.lastrowid
+	except mysql.connector.Error as e: print(f"❌ Database error: {e}")
 
-	user_id = cur.lastrowid
-	cur.close()
-	conn.close()
+	finally:
+		cur.close()
+		conn.close()
 
 	return user_id
 
@@ -102,32 +106,37 @@ def save_passenger_ride(
 ):
 	conn = get_connection()
 	cur = conn.cursor()
-	cur.execute(
-		"""
-			INSERT INTO ride_requests
+
+	try:
+		cur.execute(
+			"""
+				INSERT INTO ride_requests
+				(
+					passenger_id,
+					from_city,
+					to_city,
+					seats,
+					passenger_name,
+					passenger_phone,
+					status
+				)
+				VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+			""",
 			(
 				passenger_id,
 				from_city,
 				to_city,
 				seats,
 				passenger_name,
-				passenger_phone,
-				status
+				passenger_phone
 			)
-			VALUES (%s, %s, %s, %s, %s, %s, 'pending')
-		""",
-		(
-			passenger_id,
-			from_city,
-			to_city,
-			seats,
-			passenger_name,
-			passenger_phone
 		)
-	)
-	conn.commit()
-	request_id = cur.lastrowid
-	cur.close()
-	conn.close()
-	return request_id
+		conn.commit()
+		request_id = cur.lastrowid
+	except mysql.connector.Error as e: print(f"❌ Database error: {e}")
 
+	finally:
+		cur.close()
+		conn.close()
+
+	return request_id

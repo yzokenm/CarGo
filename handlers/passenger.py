@@ -109,7 +109,7 @@ async def handle_phone(message: Message, state: FSMContext):
 
 	try:
 		# Get passenger id
-		passenger_id = helper.ensure_passenger_and_get_id(message.from_user.id, message.from_user.full_name, phone)
+		passenger_id = helper.save_passenger(message.from_user.id, message.from_user.full_name, phone)
 
 		# Save passenger ride
 		request_id = helper.save_passenger_ride(
