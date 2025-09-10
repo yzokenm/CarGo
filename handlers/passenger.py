@@ -114,10 +114,10 @@ async def handle_phone(message: Message, state: FSMContext):
 		# Save passenger ride
 		request_id = helper.save_passenger_ride(
 			passenger_id,
+			message.from_user.full_name,
 			data["from_city"],
 			data["to_city"],
 			data["seats"],
-			message.from_user.full_name,
 			data["phone"]
 		)
 
@@ -155,8 +155,8 @@ async def handle_phone(message: Message, state: FSMContext):
 					driver["telegram_id"],
 					f"🚕 Yangi so'rov!\n"
 					f"👤 Yo'lovchi: {message.from_user.full_name}\n"
-					f"📍 {from_city} → {to_city}\n"
-					f"💺 O'rindiqlar: {seats}\n"
+					f"📍 Yo'nalish: {data["from_city"]} → {data["to_city"]}\n"
+					f"💺 O'rindiqlar: {data["seats"]}\n"
 					f"☎️ Telefon: {phone}\n",
 					reply_markup=helper.driver_accept_kb(request_id)
 				)

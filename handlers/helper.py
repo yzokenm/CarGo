@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 from database.db import get_connection
+import mysql.connector
 
 def build_kb(options, per_row=None) -> ReplyKeyboardMarkup:
 	# group into rows
@@ -98,10 +99,10 @@ def save_passenger(telegram_id, name, phone):
 
 def save_passenger_ride(
 	passenger_id,
+	passenger_name,
 	from_city,
 	to_city,
 	seats,
-	passenger_name,
 	passenger_phone
 ):
 	conn = get_connection()

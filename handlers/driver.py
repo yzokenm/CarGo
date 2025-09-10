@@ -66,7 +66,7 @@ async def handle_phone(message: Message, state: FSMContext):
 		f"✅ Siz muvaffaqiyatli haydovchi sifatida ro‘yxatdan o‘tdingiz!\n\n"
 		f"👤 Ism: {message.from_user.full_name}\n"
 		f"📞 Telefon: {phone_number}\n"
-		f"🏙 Qatnov yo'nalish: {from_city} → {to_city}",
+		f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
 		reply_markup=ReplyKeyboardRemove()
 	)
 	await state.clear()
@@ -236,7 +236,7 @@ async def handle_cancel_driver(callback: CallbackQuery):
 					ride_requests.passenger_phone,
 					ride_requests.from_city,
 					ride_requests.to_city,
-					ride_requests.seats
+					ride_requests.seats,
 					users.telegram_id AS passenger_telegram_id
 				FROM ride_requests
 				JOIN users ON users.id = ride_requests.passenger_id
