@@ -16,8 +16,8 @@ def init_db():
 				telegram_id BIGINT UNIQUE,
 				role ENUM('driver', 'passenger') NOT NULL,
 				name VARCHAR(100) NOT NULL,
-				from_city VARCHAR(100) NOT NULL,
-				to_city VARCHAR(100) NOT NULL,
+				from_city VARCHAR(100) NULL,
+				to_city VARCHAR(100) NULL,
 				phone_number VARCHAR(20) NOT NULL,
 				is_verified BOOLEAN DEFAULT FALSE,
 
@@ -42,7 +42,6 @@ def init_db():
 				to_city VARCHAR(100) NOT NULL,
 				passenger_phone VARCHAR(20) NOT NULL,
 				passenger_name VARCHAR(100) NOT NULL,
-				date DATE NOT NULL,
 				seats INT NOT NULL,
 				status ENUM('pending', 'accepted', 'taken', 'completed', 'cancelled') DEFAULT 'pending',
 
