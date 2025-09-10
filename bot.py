@@ -1,10 +1,14 @@
 import logging
 import asyncio
 from aiogram import Bot, Dispatcher
+
 from database.config import BOT_TOKEN
 from database.db import init_db
-from handlers import start, driver, passenger
-from keyboards import menus
+
+from modules import start
+from driver import driver
+from passenger import passenger
+from menu import menus
 
 logging.basicConfig(level=logging.INFO)
 

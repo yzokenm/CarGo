@@ -1,7 +1,8 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from keyboards.menus import role_selection_kb
+
+from menu.menus import role_selection_kb
 
 router = Router()
 
