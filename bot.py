@@ -6,9 +6,8 @@ from database.config import BOT_TOKEN
 from database.db import init_db
 
 from modules import start
-from driver import driver
-from passenger import passenger
-from menu import menus
+from routes import passenger, driver, common
+from modules import helper
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,11 +20,12 @@ async def main():
 
 	# Include routers from handlers
 	dp.include_router(start.router)
+	dp.include_router(common.common_router)
 	dp.include_router(driver.driver_router)
 	dp.include_router(passenger.passenger_router)
 
 	# Set persistent menu
-	await menus.set_bot_commands(bot)
+	await helper.set_bot_commands(bot)
 
 	# Start polling
 	await dp.start_polling(bot)
