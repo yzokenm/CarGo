@@ -1,11 +1,29 @@
 from datetime import datetime, timedelta
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
 from database.db import get_connection
 import mysql.connector
+from database.config import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER
 
-def build_kb(options, per_row=None) -> ReplyKeyboardMarkup:
+# -------------------- Menu acions
+def main_menu_kb():
+	return ReplyKeyboardMarkup(
+		keyboard=[
+			[KeyboardButton(text=REQUEST_A_RIDE), KeyboardButton(text=REGISTER_AS_DRIVER)]
+		],
+		resize_keyboard=True
+	)
+
+async def set_bot_commands(bot):
+	commands = [BotCommand(command="start", description=RESTART)]
+	await bot.set_my_commands(commands)
+
+
+
+
+# -------------------- Form acions
+def build_kb(options, per_row) -> ReplyKeyboardMarkup:
 	# group into rows
 	rows, row = [], []
 	for opt in options:
@@ -13,15 +31,18 @@ def build_kb(options, per_row=None) -> ReplyKeyboardMarkup:
 		if per_row and len(row) == per_row:
 			rows.append(row)
 			row = []
-	if row:
-		rows.append(row)
+	if row: rows.append(row)
+
+	# Always add navigation buttons
+	rows.append([KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)])
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 def phone_request_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
-			[KeyboardButton(text="📞 Share my phone number", request_contact=True)]
+			[KeyboardButton(text="📞 Share my phone number", request_contact=True)],
+			[KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)]
 		],
 		resize_keyboard=True,
 		one_time_keyboard=True
@@ -48,8 +69,10 @@ def cancel_driver_kb(request_id):
 	])
 
 
-# --- DB Helpers ---
-# Ensure user exists (driver)
+
+
+
+# -------------------- DB acions
 def save_driver(telegram_id, name, phone, from_city, to_city):
 	conn = get_connection()
 	cur = conn.cursor()
