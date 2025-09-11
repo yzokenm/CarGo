@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 import mysql.connector
 
-from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS
+from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE
 from database.db import get_connection
 from modules import helper
 
@@ -22,11 +22,11 @@ class PassengerForm(StatesGroup):
 	phone = State()
 
 # --- Flow ---
-@passenger_router.message(F.text == "🚖 Taksi buyurtma berish")
+@passenger_router.message(F.text == REQUEST_A_RIDE)
 async def start_passenger_flow(message: Message, state: FSMContext):
 	await state.set_state(PassengerForm.direction)
 	kb = helper.build_kb(DIRECTIONS, per_row=2)
-	await message.answer("Yo‘nalishni tanlang:", reply_markup=kb)
+	await message.answer("🗺 Yo‘nalishni tanlang:", reply_markup=kb)
 
 
 @passenger_router.message(PassengerForm.direction)

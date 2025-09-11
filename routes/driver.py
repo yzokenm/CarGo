@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from database.config import CITIES_TO_TASHKENT
+from database.config import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER
 from modules import helper
 
 driver_router = Router()
@@ -17,11 +17,10 @@ class DriverForm(StatesGroup):
 	phone_number = State()
 
 # --- Route Start ---
-@driver_router.message(F.text == "🧑‍✈️ Taksida ishlash")
+@driver_router.message(F.text == REGISTER_AS_DRIVER)
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.route)
-	kb = helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
-	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=kb)
+	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
 
 
 @driver_router.message(DriverForm.route)
