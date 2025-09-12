@@ -28,7 +28,7 @@ async def handle_route(message: Message, state: FSMContext):
 	route = message.text.strip()
 	if route not in CITIES_TO_TASHKENT:
 		await message.answer(
-			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang:",
+			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
 			reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
 		)
 		return
@@ -39,7 +39,7 @@ async def handle_route(message: Message, state: FSMContext):
 
 	# move to next step
 	await state.set_state(DriverForm.phone_number)
-	await message.answer("📱 Iltimos, telefon raqamingizni ulashing:", reply_markup=helper.phone_request_kb())
+	await message.answer("📱 Iltimos, telefon raqamingizni ulashing 👇", reply_markup=helper.phone_request_kb())
 
 
 @driver_router.message(DriverForm.phone_number, F.contact)

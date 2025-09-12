@@ -35,7 +35,7 @@ async def handle_direction(message: Message, state: FSMContext):
 
 	if direction not in DIRECTIONS:
 		await message.answer(
-			"❌ Noto‘g‘ri tanlov. Iltimos, menyudan tanlang:",
+			"❌ Noto‘g‘ri tanlov. Iltimos, menyudan tanlang 👇",
 			reply_markup=helper.build_kb(DIRECTIONS, per_row=1)
 		)
 		return
@@ -45,14 +45,14 @@ async def handle_direction(message: Message, state: FSMContext):
 	if direction == "🚖 Viloyatdan → Toshkentga":
 		await state.set_state(PassengerForm.route)
 		await message.answer(
-			"Qaysi shaxardan Toshkentga ketasiz?",
+			"Kerakli yo’nalishni tanlang 👇",
 			reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
 		)
 
 	elif direction == "🚖 Toshkentdan → Viloyatga":
 		await state.set_state(PassengerForm.route)
 		await message.answer(
-			"Toshkentdan qaysi shaxarga ketasiz?",
+			"Kerakli yo’nalishni tanlang 👇",
 			reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2)
 		)
 
@@ -63,7 +63,7 @@ async def handle_from_city(message: Message, state: FSMContext):
 
 	if route not in (CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT):
 		await message.answer(
-			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang:",
+			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
 			reply_markup=helper.build_kb(CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT, per_row=2)
 		)
 		return
@@ -73,25 +73,30 @@ async def handle_from_city(message: Message, state: FSMContext):
 	await state.update_data(from_city=from_city, to_city=to_city)
 
 	await state.set_state(PassengerForm.seats)
-	kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
-	await message.answer("O'rindiqlar soni:", reply_markup=kb)
+	await message.answer("💺 Iltimos yo'lovchi sonini tanlang 👇", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
 
 
 @passenger_router.message(PassengerForm.seats)
 async def handle_seats(message: Message, state: FSMContext):
 	seat = int(message.text.strip())
 	if seat not in SEAT_OPTIONS:
-		kb = helper.build_kb(SEAT_OPTIONS, per_row=2)
-		await message.answer("Iltimos, menyudan tanlang:", reply_markup=kb)
+		await message.answer("Iltimos, menyudan tanlang:", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
 		return
 
 	await state.update_data(seats=seat)
 
+	# Get previously stored from/to cities
+	data = await state.get_data()
+	from_city = data.get("from_city")
+	to_city = data.get("to_city")
+
 	# Ask for phone number
 	await state.set_state(PassengerForm.phone)
 	await message.answer(
-		"📱 Telefon raqamingizni kiriting (format: +998901234567):",
-		reply_markup=ReplyKeyboardRemove()
+		f"🚖 {from_city} → {to_city} yo‘nalishi\n\n"
+		f"📞 Buyurtma uchun telefon raqamingizni to‘liq yuboring:\n\n"
+		"❗️ Namuna: +998901234567",
+		reply_markup=helper.cancel_request_kb()
 	)
 
 
@@ -101,7 +106,7 @@ async def handle_phone(message: Message, state: FSMContext):
 
 	# Check if phone_number valid(+9989901234567)
 	if not re.match(r"^\+?998\d{9}$", phone):
-		await message.answer("❌ Telefon formati noto‘g‘ri. Misol: +998901234567")
+		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
 		return
 
 	await state.update_data(phone=phone)

@@ -1,16 +1,18 @@
 from datetime import datetime, timedelta
-
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
-from database.db import get_connection
 import mysql.connector
-from database.config import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER
+from database.db import get_connection
+from database.config import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST
 
 # -------------------- Menu acions
 def main_menu_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
-			[KeyboardButton(text=REQUEST_A_RIDE), KeyboardButton(text=REGISTER_AS_DRIVER)]
+			[
+				KeyboardButton(text=REQUEST_A_RIDE),
+				KeyboardButton(text=REGISTER_AS_DRIVER)
+			]
 		],
 		resize_keyboard=True
 	)
@@ -18,6 +20,7 @@ def main_menu_kb():
 async def set_bot_commands(bot):
 	commands = [BotCommand(command="start", description=RESTART)]
 	await bot.set_my_commands(commands)
+
 
 
 
@@ -47,6 +50,12 @@ def phone_request_kb():
 		resize_keyboard=True,
 		one_time_keyboard=True
 	)
+
+def cancel_request_kb():
+	kb = [
+		[KeyboardButton(text=CANCEL_REQUEST)]
+	]
+	return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
 def driver_accept_kb(request_id: int):
 	return InlineKeyboardMarkup(inline_keyboard=[
