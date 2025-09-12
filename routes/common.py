@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from database.config import CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME, REGISTER_AS_DRIVER, MAIN_INTRO, CANCEL_REQUEST
+from database.config import CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME, REGISTER_AS_DRIVER, MAIN_INTRO, CANCEL_REQUEST, DIRECTIONS
 from modules import helper
 
 common_router = Router()
@@ -40,8 +40,11 @@ async def go_back(message: Message, state: FSMContext):
 			await state.set_state("PassengerForm:route")
 			await message.answer("🗺 Yo'nalishni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
 		elif step == "route":
+			await state.set_state("PassengerForm:direction")
+			await message.answer(NAVIGATE_BACK, reply_markup=helper.build_kb(DIRECTIONS, per_row=2))
+		elif step == "direction":
 			await state.clear()
-			await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
+			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
 
 	else:
 		# Default fallback
@@ -52,5 +55,9 @@ async def go_back(message: Message, state: FSMContext):
 # Cancel reuqest
 @common_router.message(F.text == CANCEL_REQUEST)
 async def cancel_request(message: Message, state: FSMContext):
-	await state.clear()
-	await message.answer(MAIN_INTRO, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+	current_state = await state.get_state()
+	group, step = current_state.split(":")
+	if group == "PassengerForm":
+		if step == "phone":
+			await state.set_state("PassengerForm:route")
+			await message.answer("Kerakli yo’nalishni tanlang 👇", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))

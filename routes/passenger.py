@@ -32,7 +32,6 @@ async def start_passenger_flow(message: Message, state: FSMContext):
 @passenger_router.message(PassengerForm.direction)
 async def handle_direction(message: Message, state: FSMContext):
 	direction = message.text.strip()
-
 	if direction not in DIRECTIONS:
 		await message.answer(
 			"❌ Noto‘g‘ri tanlov. Iltimos, menyudan tanlang 👇",
@@ -60,7 +59,6 @@ async def handle_direction(message: Message, state: FSMContext):
 @passenger_router.message(PassengerForm.route)
 async def handle_from_city(message: Message, state: FSMContext):
 	route = message.text.strip()
-
 	if route not in (CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT):
 		await message.answer(
 			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
