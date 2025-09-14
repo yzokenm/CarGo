@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from database.config import CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME, REGISTER_AS_DRIVER, MAIN_INTRO, CANCEL_REQUEST, DIRECTIONS
+from database.config import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS
 from modules import helper
 
 common_router = Router()
@@ -57,7 +57,19 @@ async def go_back(message: Message, state: FSMContext):
 async def cancel_request(message: Message, state: FSMContext):
 	current_state = await state.get_state()
 	group, step = current_state.split(":")
+
 	if group == "PassengerForm":
 		if step == "phone":
+			data = await state.get_data()
+			direction = data.get("direction")
+
+			if direction == "🚖 Viloyatdan → Toshkentga": direction_cities = CITIES_TO_TASHKENT
+			elif direction == "🚖 Toshkentdan → Viloyatga": direction_cities = CITIES_FROM_TASHKENT
+			else:
+				# fallback to main menu if no direction is stored
+				await state.clear()
+				await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+				return
+
 			await state.set_state("PassengerForm:route")
-			await message.answer("Kerakli yo’nalishni tanlang 👇", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+			await message.answer("Kerakli yo’nalishni tanlang 👇", reply_markup=helper.build_kb(direction_cities, per_row=2))
