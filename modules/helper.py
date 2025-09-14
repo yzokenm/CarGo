@@ -51,11 +51,7 @@ def phone_request_kb():
 		one_time_keyboard=True
 	)
 
-def cancel_request_kb():
-	kb = [
-		[KeyboardButton(text=CANCEL_REQUEST)]
-	]
-	return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+def cancel_request_kb(): return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=CANCEL_REQUEST)]], resize_keyboard=True)
 
 def driver_accept_kb(request_id: int):
 	return InlineKeyboardMarkup(inline_keyboard=[
