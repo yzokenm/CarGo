@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 import mysql.connector
 
-from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE
+from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx
 from database.db import get_connection
 from modules import helper
 
@@ -58,27 +58,47 @@ async def handle_direction(message: Message, state: FSMContext):
 
 @passenger_router.message(PassengerForm.route)
 async def handle_from_city(message: Message, state: FSMContext):
-	route = message.text.strip()
-	if route not in (CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT):
-		await message.answer(
-			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
-			reply_markup=helper.build_kb(CITIES_TO_TASHKENT + CITIES_FROM_TASHKENT, per_row=2)
-		)
-		return
+	selected_route = message.text.strip()
+	data = await state.get_data()
+	direction = data.get("direction")
+
+	if direction == "🚖 Viloyatdan → Toshkentga":
+		if selected_route not in CITIES_TO_TASHKENT:
+			await message.answer(
+				"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
+				reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
+			)
+			return
+
+	elif direction == "🚖 Toshkentdan → Viloyatga":
+		if selected_route not in CITIES_FROM_TASHKENT:
+			await message.answer(
+				"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
+				reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2)
+			)
+			return
 
 	# Split into from/to cities
-	from_city, to_city = route.split(" → ")
+	from_city, to_city = selected_route.split(" → ")
 	await state.update_data(from_city=from_city, to_city=to_city)
 
 	await state.set_state(PassengerForm.seats)
-	await message.answer("💺 Iltimos yo'lovchi sonini tanlang 👇", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
+	await message.answer(
+		"💺 Iltimos yo'lovchi sonini tanlang 👇",
+		reply_markup=helper.build_kb(SEAT_OPTIONS,
+		per_row=2)
+	)
 
 
 @passenger_router.message(PassengerForm.seats)
 async def handle_seats(message: Message, state: FSMContext):
 	seat = int(message.text.strip())
 	if seat not in SEAT_OPTIONS:
-		await message.answer("Iltimos, menyudan tanlang:", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
+		await message.answer(
+			"❌ Yo'lovchilar soni noto'g'ri. Iltimos, menyudan tanlang:",
+			reply_markup=helper.build_kb(SEAT_OPTIONS,
+			per_row=2)
+		)
 		return
 
 	await state.update_data(seats=seat)
@@ -103,7 +123,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
 	# Check if phone_number valid(+9989901234567)
-	if not re.match(r"^\+?998\d{9}$", phone):
+	if not re.match(phone_number_regEx, phone):
 		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
 		return
 
@@ -178,7 +198,7 @@ async def handle_phone(message: Message, state: FSMContext):
 
 	# Notify passenger
 	await message.answer(
-		"✅ So'rovingiz qabul qilindi.\n"
+		"✅ So'rovingiz qabul qilindi.\n\n"
 		"☎️ Tez orada haydovchi siz bilan bog'lanadi.",
 		reply_markup=ReplyKeyboardRemove()
 	)
