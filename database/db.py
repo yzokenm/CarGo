@@ -18,7 +18,7 @@ def init_db():
 				name VARCHAR(100) NOT NULL,
 				from_city VARCHAR(100) NULL,
 				to_city VARCHAR(100) NULL,
-				phone_number VARCHAR(20) NOT NULL,
+				phone VARCHAR(20) NOT NULL,
 				is_verified BOOLEAN DEFAULT FALSE,
 
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
