@@ -1,3 +1,5 @@
+import re
+
 from aiogram import Router, F
 from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
@@ -6,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from database.config import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER
+from database.config import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, UNKNOWN_COMMAND
 from modules import helper
 
 driver_router = Router()
@@ -14,7 +16,7 @@ driver_router = Router()
 # ----- States -----
 class DriverForm(StatesGroup):
 	route = State()
-	phone_number = State()
+	phone = State()
 
 # --- Route Start ---
 @driver_router.message(F.text == REGISTER_AS_DRIVER)
@@ -25,34 +27,42 @@ async def start_driver_flow(message: Message, state: FSMContext):
 
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
-	route = message.text.strip()
-	if route not in CITIES_TO_TASHKENT:
-		await message.answer(
-			"❌ Noto‘g‘ri yo‘nalish. Iltimos, menyudan tanlang 👇",
-			reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2)
-		)
+	selected_route = message.text.strip()
+	if selected_route not in CITIES_TO_TASHKENT:
+		await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
+		await state.set_state(DriverForm.route)
 		return
 
 	# Split into from/to cities
-	from_city, to_city = route.split(" → ")
+	from_city, to_city = selected_route.split(" → ")
 	await state.update_data(from_city=from_city, to_city=to_city)
 
-	# move to next step
-	await state.set_state(DriverForm.phone_number)
-	await message.answer("📱 Iltimos, telefon raqamingizni ulashing 👇", reply_markup=helper.phone_request_kb())
+	# Ask for phone number
+	await state.set_state(DriverForm.phone)
+	await message.answer(
+		f"🚖 {from_city} → {to_city} yo‘nalishi\n\n"
+		f"📞 Ro'yxatdan o'tish uchun telefon raqamingizni to‘liq yuboring:\n\n"
+		"❗️ Namuna: +998901234567",
+		reply_markup=helper.cancel_request_kb()
+	)
 
 
-@driver_router.message(DriverForm.phone_number, F.contact)
+@driver_router.message(DriverForm.phone)
 async def handle_phone(message: Message, state: FSMContext):
-	phone_number = message.contact.phone_number if message.contact else message.text
-	await state.update_data(phone_number=phone_number)
+	phone = message.text.strip()
+
+	if not re.match(phone_number_regEx, phone):
+		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
+		return
+
+	await state.update_data(phone=phone)
 	data = await state.get_data()
 
 	try:
 		helper.save_driver(
 			telegram_id=message.from_user.id,
 			name=message.from_user.full_name,
-			phone=phone_number,
+			phone=phone,
 			from_city=data["from_city"],
 			to_city=data["to_city"]
 		)
@@ -64,7 +74,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	await message.answer(
 		f"✅ Siz muvaffaqiyatli haydovchi sifatida ro‘yxatdan o‘tdingiz!\n\n"
 		f"👤 Ism: {message.from_user.full_name}\n"
-		f"📞 Telefon: {phone_number}\n"
+		f"📞 Telefon: {phone}\n"
 		f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
 		reply_markup=ReplyKeyboardRemove()
 	)
@@ -172,7 +182,7 @@ async def handle_accept_order(callback: CallbackQuery):
 		text=(
 			f"🚖 Haydovchi so'rovingizni qabul qildi!\n\n"
 			f"👨‍✈️ Haydovchi: {driver_row["name"]}\n"
-			f"📞 Telefon: {driver_row["phone_number"]}\n"
+			f"📞 Telefon: {driver_row["phone"]}\n"
 			"☎️ Haydovchi bilan bog'lanishingiz mumkin.\n"
 			"❌ Agar haydovchi bilan kelisha olmasangiz, bekor qilishingiz va boshqa haydovchini kutishingiz mumkin."
 		),
