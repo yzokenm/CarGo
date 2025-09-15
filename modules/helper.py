@@ -41,17 +41,13 @@ def build_kb(options, per_row) -> ReplyKeyboardMarkup:
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
-def phone_request_kb():
+def cancel_request_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
-			[KeyboardButton(text="📞 Share my phone number", request_contact=True)],
-			[KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)]
+			[KeyboardButton(text=CANCEL_REQUEST)]
 		],
-		resize_keyboard=True,
-		one_time_keyboard=True
+		resize_keyboard=True
 	)
-
-def cancel_request_kb(): return ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text=CANCEL_REQUEST)]], resize_keyboard=True)
 
 def driver_accept_kb(request_id: int):
 	return InlineKeyboardMarkup(inline_keyboard=[
@@ -84,12 +80,12 @@ def save_driver(telegram_id, name, phone, from_city, to_city):
 
 	cur.execute(
 		"""
-			INSERT INTO users (telegram_id, role, name, phone_number, from_city, to_city)
+			INSERT INTO users (telegram_id, role, name, phone, from_city, to_city)
 			VALUES (%s, 'driver', %s, %s, %s, %s)
 			ON DUPLICATE KEY UPDATE
 				role='driver',
 				name=VALUES(name),
-				phone_number=VALUES(phone_number),
+				phone=VALUES(phone),
 				from_city=VALUES(from_city),
 				to_city=VALUES(to_city)
 		""",
@@ -105,12 +101,12 @@ def save_passenger(telegram_id, name, phone):
 	try:
 		cur.execute(
 			"""
-				INSERT INTO users (telegram_id, role, name, phone_number)
+				INSERT INTO users (telegram_id, role, name, phone)
 				VALUES (%s, 'passenger', %s, %s)
 				ON DUPLICATE KEY UPDATE
 					role = VALUES(role),
 					name = VALUES(name),
-					phone_number = VALUES(phone_number),
+					phone = VALUES(phone),
 					id = LAST_INSERT_ID(id)
 			""",
 			(telegram_id, name, phone)

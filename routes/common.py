@@ -28,7 +28,7 @@ async def go_back(message: Message, state: FSMContext):
 
 	# Define back navigation rules
 	if group == "DriverForm":
-		if step == "phone_number":
+		if step == "phone":
 			await state.set_state("DriverForm:route")
 			await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
 		elif step == "route":
@@ -52,7 +52,7 @@ async def go_back(message: Message, state: FSMContext):
 		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
 
 
-# Cancel reuqest
+# Cancel request
 @common_router.message(F.text == CANCEL_REQUEST)
 async def cancel_request(message: Message, state: FSMContext):
 	current_state = await state.get_state()
@@ -73,3 +73,8 @@ async def cancel_request(message: Message, state: FSMContext):
 
 			await state.set_state("PassengerForm:route")
 			await message.answer("Kerakli yo’nalishni tanlang 👇", reply_markup=helper.build_kb(direction_cities, per_row=2))
+
+	if group == "DriverForm":
+		if step == "phone":
+			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+			return
