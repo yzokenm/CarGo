@@ -7,7 +7,7 @@ from modules import helper
 
 common_router = Router()
 
-# ---- Main Menu ----
+# ---- Main Menu Button ----
 @common_router.message(F.text == NAVIGATE_HOME)
 async def go_main_menu(message: Message, state: FSMContext):
 	await state.clear()
@@ -52,7 +52,7 @@ async def go_back(message: Message, state: FSMContext):
 		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
 
 
-# Cancel request
+# Cancel Request Button
 @common_router.message(F.text == CANCEL_REQUEST)
 async def cancel_request(message: Message, state: FSMContext):
 	current_state = await state.get_state()
