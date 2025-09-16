@@ -1,18 +1,6 @@
 import mysql.connector
 from config import DB_CONFIG
 
-# MySQL DB Config
-DB_CONFIG = {
-	"host": "127.0.0.1",
-	"port": 3306,
-	"user": "Yzoken",
-	"password": "yzoken_Asdfsfekj13$19",
-	"database": "Yzoken$Chopar",
-	"charset": "utf8mb4",
-	"collation": "utf8mb4_0900_ai_ci"
-}
-
-
 def get_connection():
 	return mysql.connector.connect(**DB_CONFIG)
 
