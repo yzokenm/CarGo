@@ -97,7 +97,7 @@ async def handle_accept_order(callback: CallbackQuery):
 				SELECT
 					id,
 					name,
-					phone_number,
+					phone,
 					from_city,
 					to_city
 				FROM users
@@ -141,7 +141,7 @@ async def handle_accept_order(callback: CallbackQuery):
 					ride_requests.passenger_phone,
 					ride_requests.from_city,
 					ride_requests.to_city,
-					ride_requests.seats
+					ride_requests.seats,
 					users.telegram_id AS passenger_telegram_id
 				FROM ride_requests
 				JOIN users ON ride_requests.passenger_id = users.id
