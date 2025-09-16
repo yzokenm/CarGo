@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from database.config import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, UNKNOWN_COMMAND
+from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, UNKNOWN_COMMAND
 from modules import helper
 
 driver_router = Router()

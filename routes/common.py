@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message
 from aiogram.fsm.context import FSMContext
 
-from database.config import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS
+from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS
 from modules import helper
 
 common_router = Router()

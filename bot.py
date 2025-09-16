@@ -2,7 +2,7 @@ import logging
 import asyncio
 from aiogram import Bot, Dispatcher
 
-from database.config import BOT_TOKEN
+from config import BOT_TOKEN
 from database.db import init_db
 
 from modules import start

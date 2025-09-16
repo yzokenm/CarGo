@@ -8,8 +8,8 @@ from aiogram.fsm.context import FSMContext
 
 import mysql.connector
 
-from database.config import DB_CONFIG, DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, UNKNOWN_COMMAND
-from database.db import get_connection
+from dictionary import DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, UNKNOWN_COMMAND
+from database.db import get_connection, DB_CONFIG
 from modules import helper
 
 passenger_router = Router()
