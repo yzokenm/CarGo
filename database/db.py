@@ -1,4 +1,5 @@
 import mysql.connector
+from config import DB_CONFIG
 
 # MySQL DB Config
 DB_CONFIG = {
