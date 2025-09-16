@@ -1,8 +1,8 @@
 from aiogram import Router, F
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS
+from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, ABOUT_US_MSG, ABOUT_US
 from modules import helper
 
 common_router = Router()
@@ -50,6 +50,18 @@ async def go_back(message: Message, state: FSMContext):
 		# Default fallback
 		await state.clear()
 		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
+
+
+# ---- Main Menu Button ----
+@common_router.message(F.text == CONTACT_US)
+async def contact_us(message: Message):
+	photo = FSInputFile("images/Logo.jpg")
+	await message.answer_photo(photo=photo, caption=CONTACT_US_MSG)
+
+@common_router.message(F.text == ABOUT_US)
+async def contact_us(message: Message):
+	photo = FSInputFile("images/Logo.jpg")
+	await message.answer_photo(photo=photo, caption=ABOUT_US_MSG, parse_mode="HTML")
 
 
 # Cancel Request Button
