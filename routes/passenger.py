@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 
 import mysql.connector
 
-from dictionary import DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, UNKNOWN_COMMAND
+from dictionary import DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, INVALID_COMMAND
 from database.db import get_connection
 from config import DB_CONFIG
 from modules import helper
@@ -33,7 +33,7 @@ async def start_passenger_flow(message: Message, state: FSMContext):
 async def handle_direction(message: Message, state: FSMContext):
 	direction = message.text.strip()
 	if direction not in DIRECTIONS:
-		await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(DIRECTIONS, per_row=2), parse_mode="HTML")
+		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(DIRECTIONS, per_row=2), parse_mode="HTML")
 		return
 
 	await state.update_data(direction=direction)
@@ -54,12 +54,12 @@ async def handle_from_city(message: Message, state: FSMContext):
 
 	if direction == "🚖 Viloyatdan → Toshkentga":
 		if selected_route not in CITIES_TO_TASHKENT:
-			await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
+			await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
 			return
 
 	elif direction == "🚖 Toshkentdan → Viloyatga":
 		if selected_route not in CITIES_FROM_TASHKENT:
-			await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2), parse_mode="HTML")
+			await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2), parse_mode="HTML")
 			return
 
 	# Split into from/to cities
@@ -75,7 +75,7 @@ async def handle_seats(message: Message, state: FSMContext):
 	text = message.text.strip()
 	try: seat = int(text)
 	except ValueError:
-		await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2), parse_mode="HTML")
+		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2), parse_mode="HTML")
 		return
 
 	if seat not in SEAT_OPTIONS:

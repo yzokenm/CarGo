@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, UNKNOWN_COMMAND
+from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND
 from modules import helper
 
 driver_router = Router()
@@ -29,7 +29,7 @@ async def start_driver_flow(message: Message, state: FSMContext):
 async def handle_route(message: Message, state: FSMContext):
 	selected_route = message.text.strip()
 	if selected_route not in CITIES_TO_TASHKENT:
-		await message.answer(UNKNOWN_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
+		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
 		await state.set_state(DriverForm.route)
 		return
 

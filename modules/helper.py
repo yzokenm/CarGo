@@ -3,19 +3,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 import mysql.connector
 from database.db import get_connection
-from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST
+from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST, CONTACT_US, ABOUT_US
 
-# -------------------- Menu acions
+# -------------------- Menu acions --------------------
 def main_menu_kb():
-	return ReplyKeyboardMarkup(
-		keyboard=[
-			[
-				KeyboardButton(text=REQUEST_A_RIDE),
-				KeyboardButton(text=REGISTER_AS_DRIVER)
-			]
-		],
-		resize_keyboard=True
-	)
+	options = [REQUEST_A_RIDE, REGISTER_AS_DRIVER, CONTACT_US, ABOUT_US]
+	return build_kb(options, per_row=2, include_navigation=False)
 
 async def set_bot_commands(bot):
 	commands = [BotCommand(command="start", description=RESTART)]
@@ -25,8 +18,8 @@ async def set_bot_commands(bot):
 
 
 
-# -------------------- Form acions
-def build_kb(options, per_row) -> ReplyKeyboardMarkup:
+# -------------------- Form acions --------------------
+def build_kb(options, per_row, include_navigation=True) -> ReplyKeyboardMarkup:
 	# group into rows
 	rows, row = [], []
 	for opt in options:
@@ -37,7 +30,7 @@ def build_kb(options, per_row) -> ReplyKeyboardMarkup:
 	if row: rows.append(row)
 
 	# Always add navigation buttons
-	rows.append([KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)])
+	if include_navigation: rows.append([KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)])
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
@@ -73,7 +66,7 @@ def cancel_driver_kb(request_id):
 
 
 
-# -------------------- DB acions
+# -------------------- DB acions --------------------
 def save_driver(telegram_id, name, phone, from_city, to_city):
 	conn = get_connection()
 	cur = conn.cursor()
