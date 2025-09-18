@@ -8,21 +8,38 @@ def init_db():
 	connection = get_connection()
 	cursor = connection.cursor()
 
-	# Users: can be driver or passenger
+	# Users
 	cursor.execute(
 		"""
 			CREATE TABLE IF NOT EXISTS users (
 				id INT AUTO_INCREMENT PRIMARY KEY,
 				telegram_id BIGINT UNIQUE,
-				role ENUM('driver', 'passenger') NOT NULL,
 				name VARCHAR(100) NOT NULL,
-				from_city VARCHAR(100) NULL,
-				to_city VARCHAR(100) NULL,
 				phone VARCHAR(20) NOT NULL,
-				is_verified BOOLEAN DEFAULT FALSE,
 
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+		"""
+	)
+
+	# Drivers
+	cursor.execute(
+		"""
+			CREATE TABLE IF NOT EXISTS drivers (
+				id INT AUTO_INCREMENT PRIMARY KEY,
+				user_id INT NOT NULL UNIQUE,
+				from_city VARCHAR(100) NOT NULL,
+				to_city VARCHAR(100) NOT NULL,
+				car_status ENUM('standard', 'comfort', 'business') DEFAULT 'standard',
+				car_model VARCHAR(100) NULL,
+				license_plate VARCHAR(20) NULL,
+				is_verified BOOLEAN DEFAULT FALSE,
+
+				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 		"""
@@ -35,13 +52,13 @@ def init_db():
 				id INT AUTO_INCREMENT PRIMARY KEY,
 
 				taken_by_driver_id INT NULL,
-
 				passenger_id INT NOT NULL,
+
 				direction ENUM('to_tashkent', 'from_tashkent') NOT NULL,
 				from_city VARCHAR(100) NOT NULL,
 				to_city VARCHAR(100) NOT NULL,
-				passenger_phone VARCHAR(20) NOT NULL,
 				passenger_name VARCHAR(100) NOT NULL,
+				passenger_phone VARCHAR(20) NOT NULL,
 				seats INT NOT NULL,
 				status ENUM('pending', 'accepted', 'taken', 'completed', 'cancelled') DEFAULT 'pending',
 
@@ -49,7 +66,7 @@ def init_db():
 				updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
 				FOREIGN KEY (passenger_id) REFERENCES users(id) ON DELETE CASCADE,
-				FOREIGN KEY (taken_by_driver_id) REFERENCES users(id) ON DELETE SET NULL
+				FOREIGN KEY (taken_by_driver_id) REFERENCES drivers(id) ON DELETE SET NULL
 
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 		"""
@@ -60,14 +77,14 @@ def init_db():
 		"""
 			CREATE TABLE IF NOT EXISTS ride_notifications (
 				id INT AUTO_INCREMENT PRIMARY KEY,
-				driver_id INT NOT NULL,
+				driver_id INT NOT NULL,   -- references drivers now
 				ride_id INT NOT NULL,
 
 				notified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 				UNIQUE KEY (ride_id, driver_id),
 
 				FOREIGN KEY (ride_id) REFERENCES ride_requests(id) ON DELETE CASCADE,
-				FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE CASCADE
+				FOREIGN KEY (driver_id) REFERENCES drivers(id) ON DELETE CASCADE
 
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
 		"""
