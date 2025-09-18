@@ -131,12 +131,15 @@ async def handle_phone(message: Message, state: FSMContext):
 
 		cur.execute(
 			"""
-				SELECT id, telegram_id, name
-				FROM users
+				SELECT
+					drivers.id,
+					users.telegram_id,
+					users.name
+				FROM drivers
+				JOIN users ON users.id = drivers.user_id
 				WHERE
-					role='driver' AND
-					from_city=%s AND
-					to_city=%s
+					drivers.from_city=%s AND
+					drivers.to_city=%s
 			""",
 			(data["from_city"], data["to_city"])
 		)

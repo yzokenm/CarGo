@@ -95,15 +95,14 @@ async def handle_accept_order(callback: CallbackQuery):
 		cur.execute(
 			"""
 				SELECT
-					id,
-					name,
-					phone,
-					from_city,
-					to_city
-				FROM users
-				WHERE
-					telegram_id=%s AND
-					role='driver'
+					drivers.id,
+					drivers.from_city,
+					drivers.to_city,
+					users.name,
+					users.phone
+				FROM drivers
+				JOIN users ON users.id = drivers.user_id
+				WHERE users.telegram_id=%s
 			""",
 			(driver_telegram_id,)
 		)
@@ -257,9 +256,25 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		ride = cur.fetchone()
 
 		# Get all drivers (optional: exclude cancelled driver)
-		if cancelled_driver_id: cur.execute("SELECT id, telegram_id FROM users WHERE role='driver' AND id != %s", (cancelled_driver_id,))
-		else: cur.execute("SELECT id, telegram_id FROM users WHERE role='driver'")
+		if cancelled_driver_id:
+			cur.execute("""
+				SELECT
+					drivers.id,
+					users.telegram_id
+				FROM drivers
+				JOIN users ON users.id = drivers.user_id
+				WHERE drivers.id != %s
+			""", (cancelled_driver_id,))
+		else:
+			cur.execute("""
+				SELECT
+					drivers.id,
+					users.telegram_id
+				FROM drivers
+				JOIN users ON users.id = drivers.user_id
+			""")
 		drivers = cur.fetchall()
+
 
 	finally:
 		cur.close()

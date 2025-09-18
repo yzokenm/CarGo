@@ -67,24 +67,41 @@ def cancel_driver_kb(request_id):
 
 
 # -------------------- DB acions --------------------
-def save_driver(telegram_id, name, phone, from_city, to_city):
+def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standard"):
 	conn = get_connection()
 	cur = conn.cursor()
 
+	# 1. Ensure user exists in users table
 	cur.execute(
 		"""
-			INSERT INTO users (telegram_id, role, name, phone, from_city, to_city)
-			VALUES (%s, 'driver', %s, %s, %s, %s)
-			ON DUPLICATE KEY UPDATE
-				role='driver',
-				name=VALUES(name),
-				phone=VALUES(phone),
-				from_city=VALUES(from_city),
-				to_city=VALUES(to_city)
+		INSERT INTO users (telegram_id, name, phone)
+		VALUES (%s, %s, %s)
+		ON DUPLICATE KEY UPDATE
+			name = VALUES(name),
+			phone = VALUES(phone)
 		""",
-		(telegram_id, name, phone, from_city, to_city)
+		(telegram_id, name, phone)
 	)
 	conn.commit()
+
+	# Get user_id
+	cur.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
+	user_id = cur.fetchone()[0]
+
+	# 2. Insert or update driver profile
+	cur.execute(
+		"""
+		INSERT INTO drivers (user_id, from_city, to_city, car_status)
+		VALUES (%s, %s, %s, %s)
+		ON DUPLICATE KEY UPDATE
+			from_city = VALUES(from_city),
+			to_city   = VALUES(to_city),
+			car_status = VALUES(car_status)
+		""",
+		(user_id, from_city, to_city, car_status)
+	)
+	conn.commit()
+
 	cur.close()
 	conn.close()
 
@@ -94,10 +111,9 @@ def save_passenger(telegram_id, name, phone):
 	try:
 		cur.execute(
 			"""
-				INSERT INTO users (telegram_id, role, name, phone)
-				VALUES (%s, 'passenger', %s, %s)
+				INSERT INTO users (telegram_id, name, phone)
+				VALUES (%s, %s, %s)
 				ON DUPLICATE KEY UPDATE
-					role = VALUES(role),
 					name = VALUES(name),
 					phone = VALUES(phone),
 					id = LAST_INSERT_ID(id)
