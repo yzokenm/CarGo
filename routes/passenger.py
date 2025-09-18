@@ -157,15 +157,13 @@ async def handle_phone(message: Message, state: FSMContext):
 
 				await message.bot.send_message(
 					driver["telegram_id"],
-					f"🚕 Yangi so'rov!\n"
-					f"👤 Yo'lovchi: {message.from_user.full_name}\n"
+					f"✨ Yangi so'rov!\n\n"
+					f"🧑‍💼 Yo'lovchi: {message.from_user.full_name}\n"
 					f"📍 Yo'nalish: {data["from_city"]} → {data["to_city"]}\n"
-					f"💺 O'rindiqlar: {data["seats"]}\n"
-					f"☎️ Telefon: {phone}\n",
+					f"💺 O'rindiqlar: {data["seats"]}\n\n"
+					f"🚀 Safarga tayyormisiz? So'rovni qabul qiling!",
 					reply_markup=helper.driver_accept_kb(request_id)
 				)
-				print(f"✅ Sent to driver {driver['name']} ({driver['telegram_id']})")
-
 			except Exception as e: print(f"⚠️ Could not notify {driver['name']}: {e}")
 
 	except mysql.connector.Error as e:

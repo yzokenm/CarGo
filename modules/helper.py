@@ -56,7 +56,7 @@ def cancel_driver_kb(request_id):
 	return InlineKeyboardMarkup(inline_keyboard=[
 		[
 			InlineKeyboardButton(
-				text="❌ Haydovchini bekor qilish",
+				text="❌ Bekor qilish",
 				callback_data=f"cancel_driver:{request_id}"
 			)
 		]

@@ -168,25 +168,26 @@ async def handle_accept_order(callback: CallbackQuery):
 	# Notify driver
 	await callback.message.edit_reply_markup()
 	await callback.message.answer(
-		f"✅ Siz ushbu so'rovni qabul qildingiz!\n"
-		f"👤 Yo'lovchi: {ride['passenger_name']}\n"
+		f"🎉 So'rov qabul qilindi!\n\n"
+		f"🧑‍💼 Yo'lovchi: {ride['passenger_name']}\n"
 		f"☎️ Telefon: {ride['passenger_phone']}\n"
 		f"📍 Yo'nalish: {ride['from_city']} → {ride['to_city']}\n"
-		f"💺 Kerakli o'rindiqlar: {ride['seats']}\n"
-		"☎️ Iltimos, yo'lovchi bilan bog'laning."
+		f"💺 Kerakli o'rindiqlar: {ride['seats']}\n\n"
+		"🤝 Iltimos, yo'lovchi bilan bog'laning!"
 	)
 
 	# Notify passenger with cancel option
 	await callback.bot.send_message(
 		chat_id=ride['passenger_telegram_id'],
 		text=(
-			f"🚖 Haydovchi so'rovingizni qabul qildi!\n\n"
+			f"✅ Haydovchi so'rovingizni qabul qildi!\n\n"
 			f"👨‍✈️ Haydovchi: {driver_row["name"]}\n"
-			f"📞 Telefon: {driver_row["phone"]}\n"
-			"☎️ Haydovchi bilan bog'lanishingiz mumkin.\n"
-			"❌ Agar haydovchi bilan kelisha olmasangiz, bekor qilishingiz va boshqa haydovchini kutishingiz mumkin."
+			f"📞 Telefon: {driver_row["phone"]}\n\n"
+			"📲 Haydovchi bilan bog'lanishingiz mumkin.\n"
+			"❌ Agar haydovchi bilan kelisha olmasangiz, <b>Bekor qilish</b> tugmasini bosing va boshqa haydovchini kutishingiz mumkin."
 		),
-		reply_markup=helper.cancel_driver_kb(request_id)
+		reply_markup=helper.cancel_driver_kb(request_id),
+		parse_mode="HTML"
 	)
 
 
@@ -265,14 +266,14 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		conn.close()
 
 	# Notify passenger
-	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz. So'rovingiz qayta faollashtirildi. 🚖 Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
+	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz. 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
 
 	# Notify cancelled driver
 	if cancelled_driver_telegram:
 		try:
 			await callback.bot.send_message(
 				chat_id=cancelled_driver_telegram,
-				text="⚠️ Yo‘lovchi sayohatingizni bekor qildi. So'rov qayta faollashtirildi."
+				text="⚠️ Yo‘lovchi so'rovni bekor qildi. \n\n ⏳ So'rov qayta faollashtirildi."
 			)
 		except: pass
 
