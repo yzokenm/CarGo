@@ -40,8 +40,8 @@ async def handle_route(message: Message, state: FSMContext):
 	# Ask for phone number
 	await state.set_state(DriverForm.phone)
 	await message.answer(
-		f"🚖 {from_city} → {to_city} yo‘nalishi\n\n"
-		f"📞 Ro'yxatdan o'tish uchun telefon raqamingizni to‘liq yuboring:\n\n"
+		f"🚖 {from_city} → {to_city} yo'nalishi\n\n"
+		f"📞 Ro'yxatdan o'tish uchun telefon raqamingizni to'liq yuboring:\n\n"
 		"❗️ Namuna: +998901234567",
 		reply_markup=helper.cancel_request_kb()
 	)
@@ -52,33 +52,35 @@ async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
 	if not re.match(phone_number_regEx, phone):
-		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
+		await message.answer("❌ Telefon formati noto'g'i. Namuna: +998901234567")
 		return
 
 	await state.update_data(phone=phone)
 	data = await state.get_data()
 
 	try:
-		helper.save_driver(
+		result = helper.save_driver(
 			telegram_id=message.from_user.id,
 			name=message.from_user.full_name,
 			phone=phone,
 			from_city=data["from_city"],
 			to_city=data["to_city"]
 		)
-	except mysql.connector.Error as e:
-		await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
-		await state.clear()
-		return
 
-	await message.answer(
-		f"✅ Siz muvaffaqiyatli haydovchi sifatida ro‘yxatdan o‘tdingiz!\n\n"
-		f"👤 Ism: {message.from_user.full_name}\n"
-		f"📞 Telefon: {phone}\n"
-		f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
-		reply_markup=ReplyKeyboardRemove()
-	)
-	await state.clear()
+		if result == "driver_exist":
+			await message.answer("🚖 Siz ro'yxatdan o'tib bo'lgansiz!\n\n ❗Takroriy ro'yxatdan o'tish talab qilinmaydi.")
+			return
+		else:
+			await message.answer(
+				f"✅ Siz muvaffaqiyatli haydovchi sifatida ro'yxatdan o'tdingiz!\n\n"
+				f"👤 Ism: {message.from_user.full_name}\n"
+				f"📞 Telefon: {phone}\n"
+				f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
+				reply_markup=ReplyKeyboardRemove()
+			)
+
+	except mysql.connector.Error as e: await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
+
 
 
 # ---- Accept order ----

@@ -88,6 +88,15 @@ def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standa
 	cur.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
 	user_id = cur.fetchone()[0]
 
+	# 2. Check if driver profile already exists
+	cur.execute("SELECT id FROM drivers WHERE user_id = %s", (user_id,))
+	existing_driver = cur.fetchone()
+
+	if existing_driver:
+		cur.close()
+		conn.close()
+		return "driver_exist"
+
 	# 2. Insert or update driver profile
 	cur.execute(
 		"""
