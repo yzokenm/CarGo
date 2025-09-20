@@ -114,6 +114,28 @@ def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standa
 	cur.close()
 	conn.close()
 
+def get_all_drivers(from_city, to_city):
+	conn = get_connection()
+	cur = conn.cursor(dictionary=True)
+
+	cur.execute(
+		"""
+			SELECT
+				drivers.id,
+				users.telegram_id,
+				users.name
+			FROM drivers
+			JOIN users ON users.id = drivers.user_id
+			WHERE
+				drivers.from_city=%s AND
+				drivers.to_city=%s
+		""",
+		(from_city, to_city)
+	)
+	drivers = cur.fetchall()
+
+	return drivers
+
 def save_passenger(telegram_id, name, phone):
 	conn = get_connection()
 	cur = conn.cursor()
