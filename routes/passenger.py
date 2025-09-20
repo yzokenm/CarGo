@@ -126,24 +126,7 @@ async def handle_phone(message: Message, state: FSMContext):
 		)
 
 		# Fetch drivers
-		conn = get_connection()
-		cur = conn.cursor(dictionary=True)
-
-		cur.execute(
-			"""
-				SELECT
-					drivers.id,
-					users.telegram_id,
-					users.name
-				FROM drivers
-				JOIN users ON users.id = drivers.user_id
-				WHERE
-					drivers.from_city=%s AND
-					drivers.to_city=%s
-			""",
-			(data["from_city"], data["to_city"])
-		)
-		drivers = cur.fetchall()
+		drivers = helper.get_all_drivers(data["from_city"], data["to_city"])
 
 		# Send to all drivers + insert into ride_notifications
 		for driver in drivers:
@@ -181,7 +164,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	# Notify passenger
 	await message.answer(
 		"✅ Buyurtma qabul qilindi.\n\n"
-		"⏳ Tez orada haydovchi siz bilan bog'lanadi.",
+		"⏳Tez orada haydovchi siz bilan bog'lanadi.",
 		reply_markup=ReplyKeyboardRemove()
 	)
 	await state.clear()
