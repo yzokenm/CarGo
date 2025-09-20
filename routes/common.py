@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, ABOUT_US_MSG, ABOUT_US
+from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, HOW_IT_WORKS_MSG, HOW_IT_WORKS
 from modules import helper
 
 common_router = Router()
@@ -58,10 +58,10 @@ async def contact_us(message: Message):
 	photo = FSInputFile("images/Logo.jpg")
 	await message.answer_photo(photo=photo, caption=CONTACT_US_MSG)
 
-@common_router.message(F.text == ABOUT_US)
+@common_router.message(F.text == HOW_IT_WORKS)
 async def contact_us(message: Message):
 	photo = FSInputFile("images/Logo.jpg")
-	await message.answer_photo(photo=photo, caption=ABOUT_US_MSG, parse_mode="HTML")
+	await message.answer_photo(photo=photo, caption=HOW_IT_WORKS_MSG, parse_mode="HTML")
 
 
 # Cancel Request Button

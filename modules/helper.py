@@ -3,11 +3,11 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 import mysql.connector
 from database.db import get_connection
-from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST, CONTACT_US, ABOUT_US
+from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST, CONTACT_US, HOW_IT_WORKS
 
 # -------------------- Menu acions --------------------
 def main_menu_kb():
-	options = [REQUEST_A_RIDE, REGISTER_AS_DRIVER, CONTACT_US, ABOUT_US]
+	options = [REQUEST_A_RIDE, REGISTER_AS_DRIVER, CONTACT_US, HOW_IT_WORKS]
 	return build_kb(options, per_row=2, include_navigation=False)
 
 async def set_bot_commands(bot):
