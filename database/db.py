@@ -36,6 +36,7 @@ def init_db():
 				car_model VARCHAR(100) NULL,
 				license_plate VARCHAR(20) NULL,
 				is_verified BOOLEAN DEFAULT FALSE,
+				is_contract_signed BOOLEAN DEFAULT FALSE,
 
 				created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
