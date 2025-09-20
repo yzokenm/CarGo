@@ -15,15 +15,30 @@ driver_router = Router()
 
 # ----- States -----
 class DriverForm(StatesGroup):
+	terms_and_conditons = State()
 	route = State()
 	phone = State()
 
 # --- Route Start ---
 @driver_router.message(F.text == REGISTER_AS_DRIVER)
 async def start_driver_flow(message: Message, state: FSMContext):
-	await state.set_state(DriverForm.route)
-	await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+	await state.set_state(DriverForm.terms_and_conditons)
+	await message.answer(
+		"📜 Terms & Conditions...\n\n"
+		"Type <b>I agree</b> to continue.",
+		reply_markup=helper.build_kb(["✅ Roziman"], per_row=2),
+		parse_mode="HTML"
+	)
 
+
+
+@driver_router.message(DriverForm.terms_and_conditons)
+async def handle_terms(message: Message, state: FSMContext):
+	if message.text.strip() == "✅ Roziman":
+		await state.update_data(terms_and_conditions=True)
+		await state.set_state(DriverForm.route)
+		await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(["✅ Roziman"], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
@@ -283,7 +298,7 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		conn.close()
 
 	# Notify passenger
-	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz. 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
+	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz.\n 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
 
 	# Notify cancelled driver
 	if cancelled_driver_telegram:
