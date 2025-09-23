@@ -5,6 +5,8 @@ from aiogram.fsm.context import FSMContext
 from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, HOW_IT_WORKS_MSG, HOW_IT_WORKS
 from modules import helper
 
+from pathlib import Path
+
 common_router = Router()
 
 # ---- Main Menu Button ----
@@ -52,15 +54,18 @@ async def go_back(message: Message, state: FSMContext):
 		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
 
 
+BASE_DIR = Path(__file__).resolve().parent  # folder where common_route.py lives
+photo_path = BASE_DIR / "images" / "Logo.jpg"
+
 # ---- Main Menu Button ----
 @common_router.message(F.text == CONTACT_US)
 async def contact_us(message: Message):
-	photo = FSInputFile("images/Logo.jpg")
+	photo = FSInputFile(photo_path)
 	await message.answer_photo(photo=photo, caption=CONTACT_US_MSG)
 
 @common_router.message(F.text == HOW_IT_WORKS)
 async def contact_us(message: Message):
-	photo = FSInputFile("images/Logo.jpg")
+	photo = FSInputFile(photo_path)
 	await message.answer_photo(photo=photo, caption=HOW_IT_WORKS_MSG, parse_mode="HTML")
 
 

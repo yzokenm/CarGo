@@ -103,7 +103,7 @@ async def handle_seats(message: Message, state: FSMContext):
 async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
-	# Check if phone_number valid(+9989901234567)
+	# Phone number regex: (+9989901234567)
 	if not re.match(phone_number_regEx, phone):
 		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
 		return
