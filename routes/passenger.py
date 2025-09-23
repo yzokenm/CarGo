@@ -111,6 +111,9 @@ async def handle_phone(message: Message, state: FSMContext):
 	await state.update_data(phone=phone)
 	data = await state.get_data()
 
+	conn = get_connection()
+	cur = conn.cursor(dictionary=True)
+
 	try:
 		# Get passenger id
 		passenger_id = helper.save_passenger(message.from_user.id, message.from_user.full_name, phone)

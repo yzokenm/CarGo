@@ -67,11 +67,19 @@ def cancel_driver_kb(request_id):
 
 
 # -------------------- DB acions --------------------
-def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standard"):
+def save_driver(
+	telegram_id,
+	name,
+	phone,
+	from_city,
+	to_city,
+	car_status="standard",
+	is_contract_signed=False
+):
 	conn = get_connection()
 	cur = conn.cursor()
 
-	# 1. Ensure user exists in users table
+	# 1. Save user to users table
 	cur.execute(
 		"""
 		INSERT INTO users (telegram_id, name, phone)
@@ -88,7 +96,7 @@ def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standa
 	cur.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
 	user_id = cur.fetchone()[0]
 
-	# 2. Check if driver profile already exists
+	# 2. Check if driver already exists
 	cur.execute("SELECT id FROM drivers WHERE user_id = %s", (user_id,))
 	existing_driver = cur.fetchone()
 
@@ -97,17 +105,18 @@ def save_driver(telegram_id, name, phone, from_city, to_city, car_status="standa
 		conn.close()
 		return "driver_exist"
 
-	# 2. Insert or update driver profile
+	# 2. Insert driver
 	cur.execute(
 		"""
-		INSERT INTO drivers (user_id, from_city, to_city, car_status)
-		VALUES (%s, %s, %s, %s)
+		INSERT INTO drivers (user_id, from_city, to_city, car_status, is_contract_signed)
+		VALUES (%s, %s, %s, %s, %s)
 		ON DUPLICATE KEY UPDATE
 			from_city = VALUES(from_city),
 			to_city   = VALUES(to_city),
-			car_status = VALUES(car_status)
+			car_status = VALUES(car_status),
+			is_contract_signed = VALUES(is_contract_signed)
 		""",
-		(user_id, from_city, to_city, car_status)
+		(user_id, from_city, to_city, car_status, is_contract_signed)
 	)
 	conn.commit()
 
@@ -128,7 +137,8 @@ def get_all_drivers(from_city, to_city):
 			JOIN users ON users.id = drivers.user_id
 			WHERE
 				drivers.from_city=%s AND
-				drivers.to_city=%s
+				drivers.to_city=%s AND
+				is_contract_signed IS TRUE
 		""",
 		(from_city, to_city)
 	)
