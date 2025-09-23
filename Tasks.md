@@ -7,5 +7,9 @@
 7. Show all users count
 8. Admin assignment role
 9. Notify admin when new driver registers
+10. Blacklist cancelled drivers per request
+11. Limit number of cancellations for passenger
+12. Request a post(Pochta) for passenger
+13. Car => Standart/Comfort/Business
 
 
