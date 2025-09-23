@@ -54,9 +54,8 @@ async def go_back(message: Message, state: FSMContext):
 		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
 
 
-BASE_DIR = Path(__file__).resolve().parent  # folder where common_route.py lives
+BASE_DIR = Path(__file__).resolve().parent.parent
 photo_path = BASE_DIR / "images" / "Logo.jpg"
-
 # ---- Main Menu Button ----
 @common_router.message(F.text == CONTACT_US)
 async def contact_us(message: Message):
