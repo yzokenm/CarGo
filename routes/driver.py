@@ -8,37 +8,32 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from database.db import get_connection
-from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND
+from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND, TERMS_AND_CONDITIONS_MSG, TERMS_AND_CONDITIONS_TEXT
 from modules import helper
 
 driver_router = Router()
 
 # ----- States -----
 class DriverForm(StatesGroup):
-	terms_and_conditons = State()
+	terms_and_conditions = State()
 	route = State()
 	phone = State()
 
 # --- Route Start ---
 @driver_router.message(F.text == REGISTER_AS_DRIVER)
 async def start_driver_flow(message: Message, state: FSMContext):
-	await state.set_state(DriverForm.terms_and_conditons)
-	await message.answer(
-		"📜 Terms & Conditions...\n\n"
-		"Type <b>I agree</b> to continue.",
-		reply_markup=helper.build_kb(["✅ Roziman"], per_row=2),
-		parse_mode="HTML"
-	)
+	await state.set_state(DriverForm.terms_and_conditions)
+	await message.answer(TERMS_AND_CONDITIONS_MSG, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2), parse_mode="HTML")
 
 
 
-@driver_router.message(DriverForm.terms_and_conditons)
+@driver_router.message(DriverForm.terms_and_conditions)
 async def handle_terms(message: Message, state: FSMContext):
-	if message.text.strip() == "✅ Roziman":
-		await state.update_data(terms_and_conditions=True)
+	if message.text.strip() == TERMS_AND_CONDITIONS_TEXT:
+		await state.update_data(is_contract_signed=True)
 		await state.set_state(DriverForm.route)
 		await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
-	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(["✅ Roziman"], per_row=2), parse_mode="HTML")
+	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
@@ -79,7 +74,8 @@ async def handle_phone(message: Message, state: FSMContext):
 			name=message.from_user.full_name,
 			phone=phone,
 			from_city=data["from_city"],
-			to_city=data["to_city"]
+			to_city=data["to_city"],
+			is_contract_signed=data["is_contract_signed"]
 		)
 
 		if result == "driver_exist":
