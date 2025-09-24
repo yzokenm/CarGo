@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
-import mysql.connector
-from database.db import get_connection
+from database.Mysql import Mysql
 from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST, CONTACT_US, HOW_IT_WORKS
 
 # -------------------- Menu acions --------------------
@@ -67,6 +66,7 @@ def cancel_driver_kb(request_id):
 
 
 # -------------------- DB acions --------------------
+
 def save_driver(
 	telegram_id,
 	name,
@@ -76,49 +76,49 @@ def save_driver(
 	car_status="standard",
 	is_contract_signed=False
 ):
-	conn = get_connection()
-	cur = conn.cursor()
-
-	# 1. Save user to users table
-	cur.execute(
-		"""
-		INSERT INTO users (telegram_id, name, phone)
-		VALUES (%s, %s, %s)
-		ON DUPLICATE KEY UPDATE
-			name = VALUES(name),
-			phone = VALUES(phone)
+	# 1. Ensure user exists
+	Mysql.execute(
+		sql="""
+			INSERT INTO users (telegram_id, name, phone)
+			VALUES (%s, %s, %s)
+			ON DUPLICATE KEY UPDATE
+				name = VALUES(name),
+				phone = VALUES(phone)
 		""",
-		(telegram_id, name, phone)
+		params=[telegram_id, name, phone],
+		commit=True
 	)
-	conn.commit()
 
-	# Get user_id
-	cur.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
-	user_id = cur.fetchone()[0]
+	# 2. Get user_id
+	user_row = Mysql.execute(
+		sql="SELECT id FROM users WHERE telegram_id = %s",
+		params=[telegram_id],
+		fetchone=True
+	)
+	user_id = user_row["id"] if user_row else None
 
-	# 2. Check if driver already exists
-	cur.execute("SELECT id FROM drivers WHERE user_id = %s", (user_id,))
-	existing_driver = cur.fetchone()
+	if not user_id: return "error_user_not_found"
 
-	if existing_driver:
-		cur.close()
-		conn.close()
-		return "driver_exist"
+	# 3. Check if driver exists
+	existing_driver = Mysql.execute(
+		sql="SELECT id FROM drivers WHERE user_id = %s",
+		params=[user_id],
+		fetchone=True
+	)
 
-	# 2. Insert driver
-	cur.execute(
-		"""
-		INSERT INTO drivers (user_id, from_city, to_city, car_status, is_contract_signed)
-		VALUES (%s, %s, %s, %s, %s)
-		ON DUPLICATE KEY UPDATE
-			from_city = VALUES(from_city),
-			to_city   = VALUES(to_city),
-			car_status = VALUES(car_status),
-			is_contract_signed = VALUES(is_contract_signed)
+	if existing_driver: return "driver_exist"
+
+	# 4. Insert new driver
+	Mysql.execute(
+		sql="""
+			INSERT INTO drivers (user_id, from_city, to_city, car_status, is_contract_signed)
+			VALUES (%s, %s, %s, %s, %s)
+			ON DUPLICATE KEY UPDATE
+				from_city = VALUES(from_city),
+				to_city   = VALUES(to_city),
+				car_status = VALUES(car_status),
+				is_contract_signed = VALUES(is_contract_signed)
 		""",
-		(user_id, from_city, to_city, car_status, is_contract_signed)
+		params=[user_id, from_city, to_city, car_status, is_contract_signed],
+		commit=True
 	)
-	conn.commit()
-
-	cur.close()
-	conn.close()

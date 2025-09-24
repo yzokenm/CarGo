@@ -219,7 +219,8 @@ async def handle_cancel_driver(callback: CallbackQuery):
 					ride_requests.taken_by_driver_id,
 					users.telegram_id
 				FROM ride_requests
-				LEFT JOIN users ON ride_requests.taken_by_driver_id = users.id
+				JOIN drivers ON drivers.id = ride_requests.taken_by_driver_id
+				JOIN users ON users.id = drivers.user_id
 				WHERE
 					ride_requests.id=%s AND
 					ride_requests.status='taken'
@@ -294,7 +295,7 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		conn.close()
 
 	# Notify passenger
-	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz.\n 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
+	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz.\n\n 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
 
 	# Notify cancelled driver
 	if cancelled_driver_telegram:
