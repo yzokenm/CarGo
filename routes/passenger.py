@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 import mysql.connector
 
 from dictionary import DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, INVALID_COMMAND
-from database.db import get_connection
+from database.Mysql import Mysql
 from config import DB_CONFIG
 from modules import helper
 
@@ -111,58 +111,91 @@ async def handle_phone(message: Message, state: FSMContext):
 	await state.update_data(phone=phone)
 	data = await state.get_data()
 
-	conn = get_connection()
-	cur = conn.cursor(dictionary=True)
-
-	try:
-		# Get passenger id
-		passenger_id = helper.save_passenger(message.from_user.id, message.from_user.full_name, phone)
-
-		# Save passenger ride
-		request_id = helper.save_passenger_ride(
-			passenger_id,
+	# Get passenger id
+	passenger_id = Mysql.execute(
+		sql="""
+			INSERT INTO users (telegram_id, name, phone)
+			VALUES (%s, %s, %s)
+			ON DUPLICATE KEY UPDATE
+				name = VALUES(name),
+				phone = VALUES(phone),
+				id = LAST_INSERT_ID(id)
+		""",
+		params=[
+			message.from_user.id,
 			message.from_user.full_name,
+			phone
+		],
+		commit=True
+	)
+
+	# Save passenger ride
+	request_id = Mysql.execute(
+		sql="""
+			INSERT INTO ride_requests
+			(
+				passenger_id,
+				from_city,
+				to_city,
+				passenger_name,
+				passenger_phone,
+				seats,
+				status
+			)
+			VALUES (%s, %s, %s, %s, %s, %s, 'pending')
+		""",
+		params=[
+			passenger_id,
 			data["from_city"],
 			data["to_city"],
-			data["seats"],
-			data["phone"]
-		)
+			message.from_user.full_name,
+			data["phone"],
+			data["seats"]
+		],
+		commit=True
+	)
 
-		# Fetch drivers
-		drivers = helper.get_all_drivers(data["from_city"], data["to_city"])
+	# Fetch drivers
+	drivers = Mysql.execute(
+		sql="""
+			SELECT
+				drivers.id,
+				users.telegram_id,
+				users.name
+			FROM drivers
+			JOIN users ON users.id = drivers.user_id
+			WHERE
+				drivers.from_city=%s AND
+				drivers.to_city=%s AND
+				is_contract_signed IS TRUE
+		""",
+		params=[data["from_city"], data["to_city"]],
+		fetchall=True
+	)
 
-		# Send to all drivers + insert into ride_notifications
-		for driver in drivers:
-			try:
-				cur.execute(
-					"""
-						INSERT INTO ride_notifications (ride_id, driver_id)
-						VALUES (%s, %s)
-						ON DUPLICATE KEY UPDATE notified_at=NOW()
-					""",
-					(request_id, driver["id"])
-				)
-				conn.commit()
+	# Notify all drivers with new request and insert into ride_notifications
+	for driver in drivers:
+		try:
+			Mysql.execute(
+				sql="""
+					INSERT INTO ride_notifications (ride_id, driver_id)
+					VALUES (%s, %s)
+					ON DUPLICATE KEY UPDATE notified_at=NOW()
+				""",
+				params=[request_id, driver["id"]],
+				commit=True
+			)
 
-				await message.bot.send_message(
-					driver["telegram_id"],
-					f"✨ Yangi so'rov!\n\n"
-					f"🧑‍💼 Yo'lovchi: {message.from_user.full_name}\n"
-					f"📍 Yo'nalish: {data["from_city"]} → {data["to_city"]}\n"
-					f"💺 O'rindiqlar: {data["seats"]}\n\n"
-					f"🚀 Safarga tayyormisiz? So'rovni qabul qiling!",
-					reply_markup=helper.driver_accept_kb(request_id)
-				)
-			except Exception as e: print(f"⚠️ Could not notify {driver['name']}: {e}")
-
-	except mysql.connector.Error as e:
-		await message.answer(f"❌ Database error: {e}")
-		await state.clear()
-		return
-
-	finally:
-		cur.close()
-		conn.close()
+			await message.bot.send_message(
+				driver["telegram_id"],
+				f"✨ Yangi so'rov!\n\n"
+				f"🧑‍💼 Yo'lovchi: {message.from_user.full_name}\n"
+				f"📍 Yo'nalish: {data["from_city"]} → {data["to_city"]}\n"
+				f"💺 O'rindiqlar: {data["seats"]}\n\n"
+				f"🚀 Safarga tayyormisiz? So'rovni qabul qiling!",
+				reply_markup=helper.driver_accept_kb(request_id)
+			)
+		except Exception as e: print(f"⚠️ Could not notify {driver['name']}: {e}")
 
 	# Notify passenger
 	await message.answer(
