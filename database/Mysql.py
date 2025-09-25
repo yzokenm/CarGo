@@ -4,7 +4,15 @@ from database.db import get_connection
 
 class Mysql:
 	@staticmethod
-	def execute(sql, params=None, commit=False, fetchone=False, fetchall=False, dictionary=True):
+	def execute(
+		sql,
+		params=None,
+		commit=False,
+		fetchone=False,
+		fetchall=False,
+		dictionary=True,
+		return_rowcount=False
+	):
 		conn = get_connection()
 		cur = conn.cursor(dictionary=dictionary)
 
@@ -14,6 +22,7 @@ class Mysql:
 			# If commit is requested (INSERT/UPDATE/DELETE)
 			if commit:
 				conn.commit()
+				if return_rowcount: return cur.rowcount
 				return cur.lastrowid
 
 			# If SELECT is requested
