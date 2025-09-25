@@ -5,11 +5,9 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-import mysql.connector
-
-from database.db import get_connection
 from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND, TERMS_AND_CONDITIONS_MSG, TERMS_AND_CONDITIONS_TEXT
 from modules import helper
+from database.Mysql import Mysql
 
 driver_router = Router()
 
@@ -24,8 +22,6 @@ class DriverForm(StatesGroup):
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.terms_and_conditions)
 	await message.answer(TERMS_AND_CONDITIONS_MSG, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2), parse_mode="HTML")
-
-
 
 @driver_router.message(DriverForm.terms_and_conditions)
 async def handle_terms(message: Message, state: FSMContext):
@@ -56,7 +52,6 @@ async def handle_route(message: Message, state: FSMContext):
 		reply_markup=helper.cancel_request_kb()
 	)
 
-
 @driver_router.message(DriverForm.phone)
 async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
@@ -68,31 +63,28 @@ async def handle_phone(message: Message, state: FSMContext):
 	await state.update_data(phone=phone)
 	data = await state.get_data()
 
-	try:
-		result = helper.save_driver(
-			telegram_id=message.from_user.id,
-			name=message.from_user.full_name,
-			phone=phone,
-			from_city=data["from_city"],
-			to_city=data["to_city"],
-			is_contract_signed=data["is_contract_signed"]
+	# Save driver
+	result = helper.save_driver(
+		telegram_id=message.from_user.id,
+		name=message.from_user.full_name,
+		phone=phone,
+		from_city=data["from_city"],
+		to_city=data["to_city"],
+		is_contract_signed=data["is_contract_signed"]
+	)
+
+	# Check if driver already registered
+	if result == "driver_exist":
+		await message.answer("🚖 Siz ro'yxatdan o'tib bo'lgansiz!\n\n ❗Takroriy ro'yxatdan o'tish talab qilinmaydi.")
+		return
+	else:
+		await message.answer(
+			f"✅ Siz muvaffaqiyatli haydovchi sifatida ro'yxatdan o'tdingiz!\n\n"
+			f"👤 Ism: {message.from_user.full_name}\n"
+			f"📞 Telefon: {phone}\n"
+			f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
+			reply_markup=ReplyKeyboardRemove()
 		)
-
-		if result == "driver_exist":
-			await message.answer("🚖 Siz ro'yxatdan o'tib bo'lgansiz!\n\n ❗Takroriy ro'yxatdan o'tish talab qilinmaydi.")
-			return
-		else:
-			await message.answer(
-				f"✅ Siz muvaffaqiyatli haydovchi sifatida ro'yxatdan o'tdingiz!\n\n"
-				f"👤 Ism: {message.from_user.full_name}\n"
-				f"📞 Telefon: {phone}\n"
-				f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
-				reply_markup=ReplyKeyboardRemove()
-			)
-
-	except mysql.connector.Error as e: await message.answer(f"❌ Database error: {e.msg}", reply_markup=ReplyKeyboardRemove())
-
-
 
 # ---- Accept order ----
 @driver_router.callback_query(F.data.startswith("accept:"))
@@ -100,82 +92,77 @@ async def handle_accept_order(callback: CallbackQuery):
 	request_id = int(callback.data.split(":")[1])
 	driver_telegram_id = callback.from_user.id
 
-	conn = get_connection()
-	cur = conn.cursor(dictionary=True)
+	# Get driver Info
+	driver = Mysql.execute(
+		sql="""
+			SELECT
+				drivers.id,
+				drivers.from_city,
+				drivers.to_city,
+				users.name,
+				users.phone
+			FROM drivers
+			JOIN users ON users.id = drivers.user_id
+			WHERE users.telegram_id=%s
+		""",
+		params=[driver_telegram_id],
+		fetchone=True
+	)
 
-	try:
-		# Get driver Info
-		cur.execute(
-			"""
-				SELECT
-					drivers.id,
-					drivers.from_city,
-					drivers.to_city,
-					users.name,
-					users.phone
-				FROM drivers
-				JOIN users ON users.id = drivers.user_id
-				WHERE users.telegram_id=%s
-			""",
-			(driver_telegram_id,)
-		)
-		driver_row = cur.fetchone()
+	if driver: driver_id = driver["id"]
+	else:
+		await callback.answer("❌ Siz haydovchi sifatida ro'yxatdan o'tmagansiz.", show_alert=True)
+		return
 
-		if driver_row: driver_id = driver_row["id"]
-		else:
-			await callback.answer("❌ Siz haydovchi sifatida ro'yxatdan o'tmagansiz.", show_alert=True)
-			return
+	# Accept ride if still pending
+	affected_rows = Mysql.execute(
+		sql="""
+			UPDATE ride_requests
+			SET
+				status='taken',
+				taken_by_driver_id=%s
+			WHERE
+				id=%s AND
+				status='pending'
+		""",
+		params=(driver_id, request_id),
+		commit=True,
+		return_rowcount=True   # ✅ returns how many rows were updated
+	)
 
-		# Accept ride if still pending
-		cur.execute(
-			"""
-				UPDATE ride_requests
-				SET
-					status='taken',
-					taken_by_driver_id=%s
-				WHERE
-					id=%s AND
-					status='pending'
-			""",
-			(driver_id, request_id)
-		)
-		conn.commit()
+	# Send notif when ride was already taken
+	if affected_rows == 0:
+		await callback.answer("❌ Bu buyurtma allaqachon boshqa haydovchi tomonidan qabul qilindi.", show_alert=True)
+		return
 
-		if cur.rowcount == 0:
-			await callback.answer("❌ Bu buyurtma allaqachon boshqa haydovchi tomonidan qabul qilindi.", show_alert=True)
-			return
+	# Get passenger ride details
+	ride = Mysql.execute(
+		sql="""
+			SELECT
+				ride_requests.passenger_name,
+				ride_requests.passenger_phone,
+				ride_requests.from_city,
+				ride_requests.to_city,
+				ride_requests.seats,
+				users.telegram_id AS passenger_telegram_id
+			FROM ride_requests
+			JOIN users ON ride_requests.passenger_id = users.id
+			WHERE ride_requests.id=%s
+		""",
+		params=[request_id],
+		fetchone=True
+	)
 
-		# Get passenger details
-		cur.execute(
-			"""
-				SELECT
-					ride_requests.passenger_name,
-					ride_requests.passenger_phone,
-					ride_requests.from_city,
-					ride_requests.to_city,
-					ride_requests.seats,
-					users.telegram_id AS passenger_telegram_id
-				FROM ride_requests
-				JOIN users ON ride_requests.passenger_id = users.id
-				WHERE ride_requests.id=%s
-			""",
-			(request_id,)
-		)
-		ride = cur.fetchone()
-
-		# Log notification for this driver (consistency with passenger flow)
-		cur.execute(
-			"""
-				INSERT INTO ride_notifications (ride_id, driver_id)
-				VALUES (%s, %s)
-				ON DUPLICATE KEY UPDATE notified_at=NOW()
-			""", (request_id, driver_id)
-		)
-		conn.commit()
-
-	finally:
-		cur.close()
-		conn.close()
+	# Insert into ride_notifications
+	Mysql.execute(
+		sql="""
+			INSERT INTO ride_notifications (ride_id, driver_id)
+			VALUES (%s, %s)
+			ON DUPLICATE KEY UPDATE notified_at=NOW()
+		""",
+		params=[request_id, driver_id],
+		commit=True
+	)
 
 	# Notify driver
 	await callback.message.edit_reply_markup()
@@ -193,8 +180,8 @@ async def handle_accept_order(callback: CallbackQuery):
 		chat_id=ride['passenger_telegram_id'],
 		text=(
 			f"✅ Haydovchi so'rovingizni qabul qildi!\n\n"
-			f"👨‍✈️ Haydovchi: {driver_row["name"]}\n"
-			f"📞 Telefon: {driver_row["phone"]}\n\n"
+			f"👨‍✈️ Haydovchi: {driver["name"]}\n"
+			f"📞 Telefon: {driver["phone"]}\n\n"
 			"📲 Haydovchi bilan bog'lanishingiz mumkin.\n"
 			"❌ Agar haydovchi bilan kelisha olmasangiz, <b>Bekor qilish</b> tugmasini bosing va boshqa haydovchini kutishingiz mumkin."
 		),
@@ -202,97 +189,97 @@ async def handle_accept_order(callback: CallbackQuery):
 		parse_mode="HTML"
 	)
 
-
 # ---- Cancel driver (passenger action) ----
 @driver_router.callback_query(F.data.startswith("cancel_driver:"))
 async def handle_cancel_driver(callback: CallbackQuery):
 	request_id = int(callback.data.split(":")[1])
 	cancelled_driver_telegram = None
 
-	conn = get_connection()
-	cur = conn.cursor(dictionary=True)
-	try:
-		# Get cancelled driver
-		cur.execute(
-			"""
-				SELECT
-					ride_requests.taken_by_driver_id,
-					users.telegram_id
-				FROM ride_requests
-				JOIN drivers ON drivers.id = ride_requests.taken_by_driver_id
-				JOIN users ON users.id = drivers.user_id
-				WHERE
-					ride_requests.id=%s AND
-					ride_requests.status='taken'
-			""",
-			(request_id,)
-		)
-		row = cur.fetchone()
-		cancelled_driver_id = row["taken_by_driver_id"] if row else None
-		cancelled_driver_telegram = row["telegram_id"] if row else None
+	# Get cancelled driver
+	cancelled_driver = Mysql.execute(
+		sql="""
+			SELECT
+				ride_requests.taken_by_driver_id AS id,
+				users.telegram_id
+			FROM ride_requests
+			JOIN drivers ON drivers.id = ride_requests.taken_by_driver_id
+			JOIN users ON users.id = drivers.user_id
+			WHERE
+				ride_requests.id=%s AND
+				ride_requests.status='taken'
+		""",
+		params=[request_id],
+		fetchone=True
+	)
+	cancelled_driver_id = cancelled_driver["id"] if cancelled_driver else None
+	cancelled_driver_telegram = cancelled_driver["telegram_id"] if cancelled_driver else None
 
-		# Reset ride
-		cur.execute(
-			"""
-				UPDATE ride_requests
-				SET
-					status='pending',
-					taken_by_driver_id=NULL
-				WHERE
-					id=%s AND
-					status='taken'
-			""",
-			(request_id,)
-		)
-		conn.commit()
+	# Reset ride
+	Mysql.execute(
+		sql="""
+			UPDATE ride_requests
+			SET
+				status='pending',
+				taken_by_driver_id=NULL
+			WHERE
+				id=%s AND
+				status='taken'
+		""",
+		params=[request_id],
+		commit=True
+	)
 
-		# Delete all old notifications for this ride
-		cur.execute("DELETE FROM ride_notifications WHERE ride_id=%s", (request_id,))
-		conn.commit()
+	# Delete all old notifications for this ride
+	Mysql.execute(
+		sql="DELETE FROM ride_notifications WHERE ride_id=%s",
+		params=[request_id],
+		commit=True
+	)
 
-		# Fetch ride
-		cur.execute(
-			"""
-				SELECT
-					ride_requests.id,
-					ride_requests.passenger_name,
-					ride_requests.passenger_phone,
-					ride_requests.from_city,
-					ride_requests.to_city,
-					ride_requests.seats,
-					users.telegram_id AS passenger_telegram_id
-				FROM ride_requests
-				JOIN users ON users.id = ride_requests.passenger_id
-				WHERE ride_requests.id=%s
-			""",
-			(request_id,)
-		)
-		ride = cur.fetchone()
+	# Fetch ride
+	ride = Mysql.execute(
+		sql="""
+			SELECT
+				ride_requests.id,
+				ride_requests.passenger_name,
+				ride_requests.passenger_phone,
+				ride_requests.from_city,
+				ride_requests.to_city,
+				ride_requests.seats,
+				users.telegram_id AS passenger_telegram_id
+			FROM ride_requests
+			JOIN users ON users.id = ride_requests.passenger_id
+			WHERE ride_requests.id=%s
+		""",
+		params=[request_id],
+		fetchone=True
+	)
 
-		# Get all drivers (optional: exclude cancelled driver)
-		if cancelled_driver_id:
-			cur.execute("""
+	# Get all drivers (optional: exclude cancelled driver)
+	if cancelled_driver_id:
+		drivers = Mysql.execute(
+			sql="""
 				SELECT
 					drivers.id,
 					users.telegram_id
 				FROM drivers
 				JOIN users ON users.id = drivers.user_id
 				WHERE drivers.id != %s
-			""", (cancelled_driver_id,))
-		else:
-			cur.execute("""
+			""",
+			params=[cancelled_driver_id],
+			fetchall=True
+		)
+	else:
+		drivers = Mysql.execute(
+			sql="""
 				SELECT
 					drivers.id,
 					users.telegram_id
 				FROM drivers
 				JOIN users ON users.id = drivers.user_id
-			""")
-		drivers = cur.fetchall()
-
-
-	finally:
-		cur.close()
-		conn.close()
+			""",
+			fetchall=True
+		)
 
 	# Notify passenger
 	await callback.message.edit_text("❌ Siz haydovchini bekor qildingiz.\n\n 🔄 So'rovingiz qayta faollashtirildi. \n\n ⏳ Boshqa haydovchilar tez orada sizga aloqaga chiqishadi.")
@@ -307,8 +294,6 @@ async def handle_cancel_driver(callback: CallbackQuery):
 		except: pass
 
 	# Re-send ride to all available drivers
-	conn = get_connection()
-	cur = conn.cursor(dictionary=True)
 	for driver in drivers:
 		try:
 			await callback.bot.send_message(
@@ -319,15 +304,10 @@ async def handle_cancel_driver(callback: CallbackQuery):
 				f"💺 Kerakli o'rindiqlar: {ride['seats']}\n",
 				reply_markup=helper.driver_accept_kb(ride['id'])
 			)
-			cur.execute(
-				"""
-					INSERT INTO ride_notifications (ride_id, driver_id)
-					VALUES (%s, %s)
-				""",
-				(ride['id'], driver['id'])
-			)
-			conn.commit()
-		except Exception as e: print(f"⚠️ Could not notify driver {driver['id']}: {e}")
 
-	cur.close()
-	conn.close()
+			Mysql.execute(
+				sql="INSERT INTO ride_notifications (ride_id, driver_id) VALUES (%s, %s)",
+				params=[ride['id'], driver['id']],
+				commit=True
+			)
+		except Exception as e: print(f"⚠️ Could not notify driver {driver['id']}: {e}")
