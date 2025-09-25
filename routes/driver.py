@@ -5,7 +5,7 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND, TERMS_AND_CONDITIONS_MSG, TERMS_AND_CONDITIONS_TEXT
+from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND, TERMS_AND_CONDITIONS_MSG, TERMS_AND_CONDITIONS
 from modules import helper
 from database.Mysql import Mysql
 
@@ -21,15 +21,15 @@ class DriverForm(StatesGroup):
 @driver_router.message(F.text == REGISTER_AS_DRIVER)
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.terms_and_conditions)
-	await message.answer(TERMS_AND_CONDITIONS_MSG, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2), parse_mode="HTML")
+	await message.answer(TERMS_AND_CONDITIONS_MSG, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.terms_and_conditions)
 async def handle_terms(message: Message, state: FSMContext):
-	if message.text.strip() == TERMS_AND_CONDITIONS_TEXT:
+	if message.text.strip() == TERMS_AND_CONDITIONS:
 		await state.update_data(is_contract_signed=True)
 		await state.set_state(DriverForm.route)
 		await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
-	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2), parse_mode="HTML")
+	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
@@ -79,12 +79,15 @@ async def handle_phone(message: Message, state: FSMContext):
 		return
 	else:
 		await message.answer(
-			f"✅ Siz muvaffaqiyatli haydovchi sifatida ro'yxatdan o'tdingiz!\n\n"
-			f"👤 Ism: {message.from_user.full_name}\n"
-			f"📞 Telefon: {phone}\n"
-			f"🏙 Qatnov yo'nalish: {data["from_city"]} → {data["to_city"]}",
+				f"🎉 Tabriklaymiz! Siz haydovchi sifatida ro'yxatdan o'tdingiz.\n\n"
+				f"📋 Sizning ma'lumotlaringiz:\n"
+				f"👤 Ism: {message.from_user.full_name}\n"
+				f"📞 Telefon: {phone}\n"
+				f"🏙 Qatnov yo'nalish: {data['from_city']} → {data['to_city']}\n\n"
+				f"⏳ Tez orada sizga yangi so'rovlar keladi. Safarga tayyor turing!",
 			reply_markup=ReplyKeyboardRemove()
 		)
+	await state.clear()
 
 # ---- Accept order ----
 @driver_router.callback_query(F.data.startswith("accept:"))
@@ -127,12 +130,12 @@ async def handle_accept_order(callback: CallbackQuery):
 		""",
 		params=(driver_id, request_id),
 		commit=True,
-		return_rowcount=True   # ✅ returns how many rows were updated
+		return_rowcount=True
 	)
 
 	# Send notif when ride was already taken
 	if affected_rows == 0:
-		await callback.answer("❌ Bu buyurtma allaqachon boshqa haydovchi tomonidan qabul qilindi.", show_alert=True)
+		await callback.answer("⚠️ Ushbu buyurtma boshqa haydovchi tomonidan qabul qilindi. ⏳ Yangi so'rovni kutishingiz mumkin.", show_alert=True)
 		return
 
 	# Get passenger ride details

@@ -66,32 +66,33 @@ INVALID_COMMAND = """
 
 
 # Terms And Conditions
-TERMS_AND_CONDITIONS_TEXT = "✅ Roziman"
+TERMS_AND_CONDITIONS = "✅ Roziman"
 TERMS_AND_CONDITIONS_MSG = """
 	■ HAYDOVCHI BILAN SHARTNOMA\n
 	Ushbu shartnoma <i>“CarGo”</i> platformasi (keyingi o'rinlarda “Platforma”) va haydovchi (keyingi
 	o'rinlarda “Haydovchi”) o'rtasida tuziladi.
 	Shartnomaning asosiy maqsadi - yo'lovchilarga xavfsiz, qulay va sifatli transport xizmatini
 	ta'minlashdir.\n
-	1. UMUMIY QOIDALAR
+	1. UMUMIY QOIDALAR\n
 	1.1. Platforma - yo'lovchi va haydovchi o'rtasida vositachi bo'lib xizmat qiladi.
 	1.2. Haydovchi o'z faoliyati uchun to'liq javobgar bo'ladi.
-	1.3. Yo'lovchi doim haqli - haydovchi esa mijozga hurmat bilan xizmat ko'rsatishi shart.
-	2. TO'LOVLAR VA QOIDALAR
-	2.1. Platforma xozircha haydovchidan hech qanday mablag' talab qilmaydi va mutlaq bepul.
+	1.3. Yo'lovchi doim haqli - haydovchi esa mijozga hurmat bilan xizmat ko'rsatishi shart.\n
+	2. TO'LOVLAR VA QOIDALAR\n
+	2.1. Platformadan foydalanish mutlaqo bepul hisoblanadi.
+	2.2. Platforma vaqtincha haydovchidan hech qanday to'lov yoki xizmat haqi talab qilmaydi.
 	2.3. Haydovchi faqat o'z hisobidan xizmat qiladi va olingan buyurtmalar uchun mustaqil javobgar
-	bo'ladi.
-	3. HAYDOVCHI MAJBURIYATLARI
+	bo'ladi.\n
+	3. HAYDOVCHI MAJBURIYATLARI\n
 	3.1. Yo'lovchi bilan doimo xushmuomala bo'lish.
 	3.2. Transport vositasi toza, ozoda va texnik jihatdan soz bo'lishi.
 	3.3. Xizmat jarayonida barcha yo'l harakati qoidalariga rioya qilish.
 	3.4. Yo'lovchini xavfsiz va belgilangan manzilga yetkazib qo'yish.
-	3.5. Platforma tomonidan belgilangan barcha qoidalarga rioya qilish.
-	4. PLATFORMANING HUQUQLARI
+	3.5. Platforma tomonidan belgilangan barcha qoidalarga rioya qilish.\n
+	4. PLATFORMANING HUQUQLARI\n
 	4.1. Haydovchi qoidabuzarlik qilgan taqdirda, uni platformadan chetlatish huquqiga ega.
 	4.2. Yo'lovchilardan tushgan shikoyatlar tekshiriladi va zarur chora ko'riladi.
-	4.3. Platforma haydovchining shaxsiy xatti-harakatlari uchun javobgar emas.
-	5. YAKUNIY QOIDALAR
+	4.3. Platforma haydovchining shaxsiy xatti-harakatlari uchun javobgar emas.\n
+	5. YAKUNIY QOIDALAR\n
 	5.1. Ushbu shartnoma muddatsiz tuzilgan bo'lib, tomonlardan biri uni bekor qilishni xohlasa,
 	oldindan ogohlantirishi shart.
 	5.2. Har qanday nizolar O'zbekiston Respublikasining amaldagi qonunlariga muvofiq hal etiladi.

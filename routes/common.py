@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, HOW_IT_WORKS_MSG, HOW_IT_WORKS, TERMS_AND_CONDITIONS_TEXT
+from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, HOW_IT_WORKS_MSG, HOW_IT_WORKS, TERMS_AND_CONDITIONS
 from modules import helper
 
 from pathlib import Path
@@ -35,7 +35,7 @@ async def go_back(message: Message, state: FSMContext):
 			await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
 		elif step == "route":
 			await state.set_state("DriverForm:terms_and_conditions")
-			await message.answer(MAIN_INTRO, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS_TEXT], per_row=2))
+			await message.answer(MAIN_INTRO, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2))
 		elif step == "terms_and_conditions":
 			await state.clear()
 			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
