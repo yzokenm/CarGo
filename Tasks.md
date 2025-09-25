@@ -3,7 +3,7 @@
 3. Make the driver register once and able to make a ride request at the same time.✅
 4. Prevent driver being removed from drivers list after making ride request.✅
 5. Payment system
-6. Refactor accept/cancel ride request
+6. Refactor accept/cancel ride request  ✅
 7. Show all users count
 8. Admin assignment role
 9. Notify admin when new driver registers
@@ -11,6 +11,6 @@
 11. Limit number of cancellations for passenger
 12. Request a post(Pochta) for passenger
 13. Car => Standart/Comfort/Business
-14.Bug while registering both passenger and driver at the same time: notogri format number error
+14.Bug while registering both passenger and driver at the same time: notogri format number error ✅
 
 
