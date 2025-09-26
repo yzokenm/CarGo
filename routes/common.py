@@ -5,7 +5,7 @@ from aiogram.fsm.context import FSMContext
 from modules import helper
 from language.language import Lang
 
-from pathlib import Path
+from settings import IMAGES_DIR
 
 common_router = Router()
 
@@ -57,17 +57,15 @@ async def go_back(message: Message, state: FSMContext):
 		await message.answer(Lang.use("navigate_home"), reply_markup=helper.main_menu_kb())
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-photo_path = BASE_DIR / "images" / "Logo.jpg"
 # ---- Contact Us Button ----
 @common_router.message(F.text == Lang.use("contact_us"))
 async def contact_us(message: Message):
-	photo = FSInputFile(photo_path)
+	photo = FSInputFile(IMAGES_DIR/"Logo.jpg")
 	await message.answer_photo(photo=photo, caption=Lang.use("contact_us_msg"))
 
 @common_router.message(F.text == Lang.use("how_it_works"))
 async def contact_us(message: Message):
-	photo = FSInputFile(photo_path)
+	photo = FSInputFile(IMAGES_DIR/"Logo.jpg")
 	await message.answer_photo(photo=photo, caption=Lang.use("how_it_works_msg"), parse_mode="HTML")
 
 
