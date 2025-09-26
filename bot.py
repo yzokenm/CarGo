@@ -6,8 +6,14 @@ from config import DB_CONFIG, BOT_TOKEN
 from database.db import init_db
 
 from modules import start
-from routes import passenger, driver, common
 from modules import helper
+
+# Load JSON dict once and "uz" by default
+from language import Lang
+Lang.load("language_dictionary.json")
+Lang.set("uz")
+
+from routes import passenger, driver, common
 
 logging.basicConfig(level=logging.INFO)
 

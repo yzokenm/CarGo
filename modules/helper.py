@@ -2,15 +2,19 @@ from datetime import datetime, timedelta
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
 from database.Mysql import Mysql
-from dictionary import NAVIGATE_BACK, NAVIGATE_HOME, RESTART, REQUEST_A_RIDE, REGISTER_AS_DRIVER, CANCEL_REQUEST, CONTACT_US, HOW_IT_WORKS
-
+from language import Lang
 # -------------------- Menu acions --------------------
 def main_menu_kb():
-	options = [REQUEST_A_RIDE, REGISTER_AS_DRIVER, CONTACT_US, HOW_IT_WORKS]
+	options = [
+		Lang.use("request_ride"),
+		Lang.use("register_driver"),
+		Lang.use("contact_us"),
+		Lang.use("how_it_works")
+	]
 	return build_kb(options, per_row=2, include_navigation=False)
 
 async def set_bot_commands(bot):
-	commands = [BotCommand(command="start", description=RESTART)]
+	commands = [BotCommand(command="start", description=Lang.use("restart"))]
 	await bot.set_my_commands(commands)
 
 
@@ -29,14 +33,14 @@ def build_kb(options, per_row, include_navigation=True) -> ReplyKeyboardMarkup:
 	if row: rows.append(row)
 
 	# Always add navigation buttons
-	if include_navigation: rows.append([KeyboardButton(text=NAVIGATE_BACK), KeyboardButton(text=NAVIGATE_HOME)])
+	if include_navigation: rows.append([KeyboardButton(text=Lang.use("navigate_back")), KeyboardButton(text=Lang.use("navigate_home"))])
 
 	return ReplyKeyboardMarkup(keyboard=rows, resize_keyboard=True)
 
 def cancel_request_kb():
 	return ReplyKeyboardMarkup(
 		keyboard=[
-			[KeyboardButton(text=CANCEL_REQUEST)]
+			[KeyboardButton(text=Lang.use("cancel_request"))]
 		],
 		resize_keyboard=True
 	)

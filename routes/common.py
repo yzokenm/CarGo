@@ -2,27 +2,27 @@ from aiogram import Router, F
 from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
-from dictionary import	CITIES_TO_TASHKENT,	CITIES_FROM_TASHKENT, NAVIGATE_BACK, NAVIGATE_HOME,	REGISTER_AS_DRIVER,	MAIN_INTRO,	CANCEL_REQUEST,	DIRECTIONS, CONTACT_US, CONTACT_US_MSG, HOW_IT_WORKS_MSG, HOW_IT_WORKS, TERMS_AND_CONDITIONS
 from modules import helper
+from language import Lang
 
 from pathlib import Path
 
 common_router = Router()
 
 # ---- Main Menu Button ----
-@common_router.message(F.text == NAVIGATE_HOME)
+@common_router.message(F.text == Lang.use("navigate_home"))
 async def go_main_menu(message: Message, state: FSMContext):
 	await state.clear()
-	await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+	await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 
 
 # ---- Back Button ----
-@common_router.message(F.text == NAVIGATE_BACK)
+@common_router.message(F.text == Lang.use("navigate_back"))
 async def go_back(message: Message, state: FSMContext):
 	current_state = await state.get_state()
 	if not current_state:
 		# Already at root → just show main menu
-		await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+		await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 		return
 
 	# FSM states look like: DriverForm:route, PassengerForm:phone, etc.
@@ -32,47 +32,47 @@ async def go_back(message: Message, state: FSMContext):
 	if group == "DriverForm":
 		if step == "phone":
 			await state.set_state("DriverForm:route")
-			await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+			await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2))
 		elif step == "route":
 			await state.set_state("DriverForm:terms_and_conditions")
-			await message.answer(MAIN_INTRO, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2))
+			await message.answer(Lang.use("main_intro"), reply_markup=helper.build_kb([Lang.use("terms_and_conditions")], per_row=2))
 		elif step == "terms_and_conditions":
 			await state.clear()
-			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+			await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 
 	elif group == "PassengerForm":
 		if step == "seats":
 			await state.set_state("PassengerForm:route")
-			await message.answer("🗺 Yo'nalishni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+			await message.answer("🗺 Yo'nalishni tanlang:", reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2))
 		elif step == "route":
 			await state.set_state("PassengerForm:direction")
-			await message.answer(NAVIGATE_BACK, reply_markup=helper.build_kb(DIRECTIONS, per_row=2))
+			await message.answer(Lang.use("navigate_back"), reply_markup=helper.build_kb(Lang.use("directions"), per_row=2))
 		elif step == "direction":
 			await state.clear()
-			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+			await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 
 	else:
 		# Default fallback
 		await state.clear()
-		await message.answer(NAVIGATE_HOME, reply_markup=helper.main_menu_kb())
+		await message.answer(Lang.use("navigate_home"), reply_markup=helper.main_menu_kb())
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 photo_path = BASE_DIR / "images" / "Logo.jpg"
 # ---- Contact Us Button ----
-@common_router.message(F.text == CONTACT_US)
+@common_router.message(F.text == Lang.use("contact_us"))
 async def contact_us(message: Message):
 	photo = FSInputFile(photo_path)
-	await message.answer_photo(photo=photo, caption=CONTACT_US_MSG)
+	await message.answer_photo(photo=photo, caption=Lang.use("contact_us_msg"))
 
-@common_router.message(F.text == HOW_IT_WORKS)
+@common_router.message(F.text == Lang.use("how_it_works"))
 async def contact_us(message: Message):
 	photo = FSInputFile(photo_path)
-	await message.answer_photo(photo=photo, caption=HOW_IT_WORKS_MSG, parse_mode="HTML")
+	await message.answer_photo(photo=photo, caption=Lang.use("how_it_works_msg"), parse_mode="HTML")
 
 
 # Cancel Request Button
-@common_router.message(F.text == CANCEL_REQUEST)
+@common_router.message(F.text == Lang.use("cancel_request"))
 async def cancel_request(message: Message, state: FSMContext):
 	current_state = await state.get_state()
 	group, step = current_state.split(":")
@@ -82,12 +82,12 @@ async def cancel_request(message: Message, state: FSMContext):
 			data = await state.get_data()
 			direction = data.get("direction")
 
-			if direction == "🚖 Viloyatdan → Toshkentga": direction_cities = CITIES_TO_TASHKENT
-			elif direction == "🚖 Toshkentdan → Viloyatga": direction_cities = CITIES_FROM_TASHKENT
+			if direction == "🚖 Viloyatdan → Toshkentga": direction_cities = Lang.use("cities_to_tashkent")
+			elif direction == "🚖 Toshkentdan → Viloyatga": direction_cities = Lang.use("cities_from_tashkent")
 			else:
 				# fallback to main menu if no direction is stored
 				await state.clear()
-				await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+				await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 				return
 
 			await state.set_state("PassengerForm:route")
@@ -95,5 +95,6 @@ async def cancel_request(message: Message, state: FSMContext):
 
 	if group == "DriverForm":
 		if step == "phone":
-			await message.answer(MAIN_INTRO, reply_markup=helper.main_menu_kb())
+			await state.clear()
+			await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
 			return

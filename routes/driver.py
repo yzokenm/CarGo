@@ -5,9 +5,11 @@ from aiogram.types import Message, ReplyKeyboardRemove, CallbackQuery
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from dictionary import CITIES_TO_TASHKENT, REGISTER_AS_DRIVER, phone_number_regEx, INVALID_COMMAND, TERMS_AND_CONDITIONS_MSG, TERMS_AND_CONDITIONS
 from modules import helper
 from database.Mysql import Mysql
+
+# Lang set up
+from language import Lang
 
 driver_router = Router()
 
@@ -18,24 +20,24 @@ class DriverForm(StatesGroup):
 	phone = State()
 
 # --- Route Start ---
-@driver_router.message(F.text == REGISTER_AS_DRIVER)
+@driver_router.message(F.text == Lang.use("register_driver"))
 async def start_driver_flow(message: Message, state: FSMContext):
 	await state.set_state(DriverForm.terms_and_conditions)
-	await message.answer(TERMS_AND_CONDITIONS_MSG, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2), parse_mode="HTML")
+	await message.answer(Lang.use("terms_and_conditions_msg"), reply_markup=helper.build_kb([Lang.use("terms_and_conditions")], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.terms_and_conditions)
 async def handle_terms(message: Message, state: FSMContext):
-	if message.text.strip() == TERMS_AND_CONDITIONS:
+	if message.text.strip() == Lang.use("terms_and_conditions"):
 		await state.update_data(is_contract_signed=True)
 		await state.set_state(DriverForm.route)
-		await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
-	else: await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb([TERMS_AND_CONDITIONS], per_row=2), parse_mode="HTML")
+		await message.answer("🗺 Iltimos, faoliyat yuritadigan shahringizni tanlang:", reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2))
+	else: await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb([Lang.use("terms_and_conditions")], per_row=2), parse_mode="HTML")
 
 @driver_router.message(DriverForm.route)
 async def handle_route(message: Message, state: FSMContext):
 	selected_route = message.text.strip()
-	if selected_route not in CITIES_TO_TASHKENT:
-		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
+	if selected_route not in Lang.use("cities_to_tashkent"):
+		await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2), parse_mode="HTML")
 		await state.set_state(DriverForm.route)
 		return
 
@@ -56,7 +58,7 @@ async def handle_route(message: Message, state: FSMContext):
 async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
-	if not re.match(phone_number_regEx, phone):
+	if not re.match(Lang.use("phone_regex"), phone):
 		await message.answer("❌ Telefon formati noto'g'i. Namuna: +998901234567")
 		return
 

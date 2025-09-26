@@ -6,9 +6,10 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKey
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
-from dictionary import DIRECTIONS, CITIES_TO_TASHKENT, CITIES_FROM_TASHKENT, SEAT_OPTIONS, REQUEST_A_RIDE, phone_number_regEx, INVALID_COMMAND
 from database.Mysql import Mysql
 from modules import helper
+
+from language import Lang
 
 passenger_router = Router()
 
@@ -20,27 +21,27 @@ class PassengerForm(StatesGroup):
 	phone = State()
 
 # --- Route Start ---
-@passenger_router.message(F.text == REQUEST_A_RIDE)
+@passenger_router.message(F.text == Lang.use("request_ride"))
 async def start_passenger_flow(message: Message, state: FSMContext):
 	await state.set_state(PassengerForm.direction)
-	await message.answer("🗺 Yo‘nalishni tanlang:", reply_markup=helper.build_kb(DIRECTIONS, per_row=2))
+	await message.answer("🗺 Yo‘nalishni tanlang:", reply_markup=helper.build_kb(Lang.use("directions"), per_row=2))
 
 
 @passenger_router.message(PassengerForm.direction)
 async def handle_direction(message: Message, state: FSMContext):
 	direction = message.text.strip()
-	if direction not in DIRECTIONS:
-		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(DIRECTIONS, per_row=2), parse_mode="HTML")
+	if direction not in Lang.use("directions"):
+		await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb(Lang.use("directions"), per_row=2), parse_mode="HTML")
 		return
 
 	await state.update_data(direction=direction)
 	if direction == "🚖 Viloyatdan → Toshkentga":
 		await state.set_state(PassengerForm.route)
-		await message.answer("Kerakli yo'nalishni tanlang 👇", reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2))
+		await message.answer("Kerakli yo'nalishni tanlang 👇", reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2))
 
 	elif direction == "🚖 Toshkentdan → Viloyatga":
 		await state.set_state(PassengerForm.route)
-		await message.answer("Kerakli yo'nalishni tanlang 👇", reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2))
+		await message.answer("Kerakli yo'nalishni tanlang 👇", reply_markup=helper.build_kb(Lang.use("cities_from_tashkent"), per_row=2))
 
 
 @passenger_router.message(PassengerForm.route)
@@ -50,13 +51,13 @@ async def handle_from_city(message: Message, state: FSMContext):
 	direction = data.get("direction")
 
 	if direction == "🚖 Viloyatdan → Toshkentga":
-		if selected_route not in CITIES_TO_TASHKENT:
-			await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_TO_TASHKENT, per_row=2), parse_mode="HTML")
+		if selected_route not in Lang.use("cities_to_tashkent"):
+			await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb(Lang.use("cities_to_tashkent"), per_row=2), parse_mode="HTML")
 			return
 
 	elif direction == "🚖 Toshkentdan → Viloyatga":
-		if selected_route not in CITIES_FROM_TASHKENT:
-			await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(CITIES_FROM_TASHKENT, per_row=2), parse_mode="HTML")
+		if selected_route not in Lang.use("cities_from_tashkent"):
+			await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb(Lang.use("cities_from_tashkent"), per_row=2), parse_mode="HTML")
 			return
 
 	# Split into from/to cities
@@ -64,7 +65,7 @@ async def handle_from_city(message: Message, state: FSMContext):
 	await state.update_data(from_city=from_city, to_city=to_city)
 
 	await state.set_state(PassengerForm.seats)
-	await message.answer("💺 Iltimos yo'lovchi sonini tanlang 👇", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
+	await message.answer("💺 Iltimos yo'lovchi sonini tanlang 👇", reply_markup=helper.build_kb(Lang.use("seat_options"), per_row=2))
 
 
 @passenger_router.message(PassengerForm.seats)
@@ -72,11 +73,11 @@ async def handle_seats(message: Message, state: FSMContext):
 	text = message.text.strip()
 	try: seat = int(text)
 	except ValueError:
-		await message.answer(INVALID_COMMAND, reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2), parse_mode="HTML")
+		await message.answer(Lang.use("invalid_command"), reply_markup=helper.build_kb(Lang.use("seat_options"), per_row=2), parse_mode="HTML")
 		return
 
-	if seat not in SEAT_OPTIONS:
-		await message.answer("❌ Yo'lovchilar soni noto'g'ri. Iltimos, menyudan tanlang 👇", reply_markup=helper.build_kb(SEAT_OPTIONS, per_row=2))
+	if seat not in Lang.use("seat_options"):
+		await message.answer("❌ Yo'lovchilar soni noto'g'ri. Iltimos, menyudan tanlang 👇", reply_markup=helper.build_kb(Lang.use("seat_options"), per_row=2))
 		return
 
 	await state.update_data(seats=seat)
@@ -101,7 +102,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	phone = message.text.strip()
 
 	# Phone number regex: (+9989901234567)
-	if not re.match(phone_number_regEx, phone):
+	if not re.match(Lang.use("phone_regex"), phone):
 		await message.answer("❌ Telefon formati noto‘g‘ri. Namuna: +998901234567")
 		return
 
