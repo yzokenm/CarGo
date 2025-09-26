@@ -1,0 +1,158 @@
+{
+	"request_ride": {
+		"uz": "🚖 Taksi buyurtma berish",
+		"ru": "🚖 Заказать такси",
+		"en": "🚖 Request a ride"
+	},
+	"register_driver": {
+		"uz": "🧑‍✈️ Taksida ishlash",
+		"ru": "🧑‍✈️ Работать в такси",
+		"en": "🧑‍✈️ Register as driver"
+	},
+	"restart": {
+		"uz": "🔄 Qayta ishga tushirish",
+		"ru": "🔄 Перезапустить",
+		"en": "🔄 Restart"
+	},
+	"navigate_back": {
+		"uz": "⬅️ Orqaga",
+		"ru": "⬅️ Назад",
+		"en": "⬅️ Back"
+	},
+	"navigate_home": {
+		"uz": "🏠 Asosiy menyu",
+		"ru": "🏠 Главное меню",
+		"en": "🏠 Main menu"
+	},
+	"cancel_request": {
+		"uz": "🚫 Bekor qilish",
+		"ru": "🚫 Отменить",
+		"en": "🚫 Cancel"
+	},
+	"directions": {
+		"uz": [
+			"🚖 Viloyatdan → Toshkentga",
+			"🚖 Toshkentdan → Viloyatga"
+		],
+		"ru": [
+			"🚖 Из области → Ташкент",
+			"🚖 Из Ташкента → область"
+		],
+		"en": [
+			"🚖 From region → Tashkent",
+			"🚖 From Tashkent → region"
+		]
+	},
+	"cities_to_tashkent": {
+		"uz": [
+			"Andijan → Toshkent",
+			"Farg'ona → Toshkent",
+			"Shaxrixon → Toshkent",
+			"Qo'qon → Toshkent",
+			"Namangan → Toshkent"
+		],
+		"ru": [
+			"Андижан → Ташкент",
+			"Фергана → Ташкент",
+			"Шахрихон → Ташкент",
+			"Коканд → Ташкент",
+			"Наманган → Ташкент"
+		],
+		"en": [
+			"Andijan → Tashkent",
+			"Fergana → Tashkent",
+			"Shahrikhon → Tashkent",
+			"Kokand → Tashkent",
+			"Namangan → Tashkent"
+		]
+	},
+	"cities_from_tashkent": {
+		"uz": [
+			"Toshkent → Andijan",
+			"Toshkent → Shaxrixon",
+			"Toshkent → Namangan",
+			"Toshkent → Qo'qon",
+			"Toshkent → Namangan"
+		],
+		"ru": [
+			"Ташкент → Андижан",
+			"Ташкент → Шахрихон",
+			"Ташкент → Наманган",
+			"Ташкент → Коканд",
+			"Ташкент → Наманган"
+		],
+		"en": [
+			"Tashkent → Andijan",
+			"Tashkent → Shahrikhon",
+			"Tashkent → Namangan",
+			"Tashkent → Kokand",
+			"Tashkent → Namangan"
+		]
+	},
+	"main_intro": {
+		"uz": "🚖 Viloyatdan Toshkentga yoki Toshkentdan viloyatga safar qilmoqchimisiz?\n\n 📲 CarGo botida buyurtma bering!",
+		"ru": "🚖 Хотите поехать из области в Ташкент или из Ташкента в область?\n\n 📲 Закажите поездку в CarGo боте!",
+		"en": "🚖 Want to travel from region to Tashkent or from Tashkent to region?\n\n 📲 Order a ride in CarGo bot!"
+	},
+	"how_it_works": {
+		"uz": "📑 Bot qanday ishlaydi?",
+		"ru": "📑 Как работает бот?",
+		"en": "📑 How does the bot work?"
+	},
+	"how_it_works_msg": {
+		"uz": "🚀 CarGo - Viloyatlararo taksi xizmati 🚖\n<a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> sizning qulay va xavfsiz sayohatingiz uchun yaratilgan zamonaviy Telegram botidir.\n\nAfzalliklarimiz:\n🔰Tez va oson buyurtma - Faqat bir necha tugmani bosib, yo'nalishingiz va manzilingizni kiriting, kerakli taksini darhol topasiz.\n⚠️Xavfsizlik va Ishonchlilik - Botda taksi haydovchilari malakali va tajribali.\n❓Qanday ishlaydi?\n1️⃣ Telegramda <a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> ni oching.\n2️⃣ “Start” tugmasini bosing.\n3️⃣ Manzilingiz va borish joyingizni kiriting.\n4️⃣ Haydovchilarimiz tez orada siz bilan bog'lanishadi.\n\n🚀 CarGo - sayohat qilishning yangi usuli!",
+		"ru": "🚀 CarGo - Межобластное такси 🚖\n<a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> создан для вашего удобного и безопасного путешествия.\n\nПреимущества:\n🔰Быстрый и простой заказ - всего несколько кликов.\n⚠️Безопасность и надежность - только опытные водители.\n❓Как это работает?\n1️⃣ Откройте <a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> в Telegram.\n2️⃣ Нажмите кнопку “Start”.\n3️⃣ Укажите маршрут и место назначения.\n4️⃣ Водители свяжутся с вами в кратчайшие сроки.\n\n🚀 CarGo - новый способ путешествовать!",
+		"en": "🚀 CarGo - Intercity taxi service 🚖\n<a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> is designed for your safe and convenient travel.\n\nAdvantages:\n🔰Fast and easy booking - just a few taps.\n⚠️Safety and reliability - professional drivers only.\n❓How it works?\n1️⃣ Open <a href=\"https://t.me/cargofastbot\"><b><i>CarGoFastBot</i></b></a> in Telegram.\n2️⃣ Press the “Start” button.\n3️⃣ Enter your route and destination.\n4️⃣ Drivers will contact you shortly.\n\n🚀 CarGo - the new way to travel!"
+	},
+	"contact_us": {
+		"uz": "☎️ Biz bilan bog'lanish",
+		"ru": "☎️ Связаться с нами",
+		"en": "☎️ Contact us"
+	},
+	"contact_us_msg": {
+		"uz": "🚖 CarGo - Viloyatlararo taksi xizmati!\n\n☎️ Call Center: +99895 036 10 99\n💬 Telegram yordam: @yzoken\n\n🚗 Tez va aniq manzilga yetkazamiz \n🛡 Har safarda xavfsizlik kafolatlangan \n🛋 Siz uchun qulay sharoitda yo'l\n💛 CarGo bilan - yo'lingiz doim ishonchli!",
+		"ru": "🚖 CarGo - Межобластное такси!\n☎️ Call Center: +99895 036 10 99💬 Telegram поддержка: @yzoken ...",
+		"en": "🚖 CarGo - Intercity taxi service!\n☎️ Call Center: +99895 036 10 99💬 Telegram support: @yzoken ..."
+	},
+	"phone_regex": {
+		"all": "^\\+?998\\d{9}$"
+	},
+	"invalid_command": {
+		"uz": "❌ Noma'lum buyruq!\n\n<i>Siz bot chatiga bevosita xabar yubordingiz yoki bot sozlamalari o‘zgartirilgan bo‘lishi mumkin.</i>\n\nℹ️ Iltimos, botga to'g'ridan-to'g'ri yozmang.\nBotdan foydalanish uchun <a href=\"https://t.me/cargofastbot?start=1\">/start</a> tugmasini bosib menyuni yangilang.",
+		"ru": "❌ Неизвестная команда!\n\n<i>Вы написали напрямую в чат бота или настройки бота изменены.</i>\n\nℹ️ Пожалуйста, не пишите напрямую боту.\nЧтобы пользоваться ботом, нажмите <a href=\"https://t.me/cargofastbot?start=1\">/start</a> и обновите меню.",
+		"en": "❌ Unknown command!\n\n<i>You wrote directly to the bot chat or the bot settings may have been changed.</i>\n\nℹ️ Please do not write directly to the bot.\nTo use the bot, press <a href=\"https://t.me/cargofastbot?start=1\">/start</a> to refresh the menu."
+	},
+	"terms_and_conditions": {
+		"uz": "✅ Roziman",
+		"ru": "✅ Согласен",
+		"en": "✅ I agree"
+	},
+	"terms_and_conditions_msg": {
+		"uz": "■ HAYDOVCHI BILAN SHARTNOMA\nUshbu shartnoma <i>“CarGo”</i> platformasi (keyingi o'rinlarda “Platforma”) va haydovchi (keyingi o'rinlarda “Haydovchi”) o'rtasida tuziladi.\nShartnomaning asosiy maqsadi - yo'lovchilarga xavfsiz, qulay va sifatli transport xizmatini ta'minlashdir.\n\n1. UMUMIY QOIDALAR\n1.1. Platforma - yo'lovchi va haydovchi o'rtasida vositachi bo'lib xizmat qiladi.\n1.2. Haydovchi o'z faoliyati uchun to'liq javobgar bo'ladi.\n1.3. Yo'lovchi doim haqli - haydovchi esa mijozga hurmat bilan xizmat ko'rsatishi shart.\n\n2. TO'LOVLAR VA QOIDALAR\n2.1. Platformadan foydalanish mutlaqo bepul hisoblanadi.\n2.2. Platforma vaqtincha haydovchidan hech qanday to'lov yoki xizmat haqi talab qilmaydi.\n2.3. Haydovchi faqat o'z hisobidan xizmat qiladi va olingan buyurtmalar uchun mustaqil javobgar bo'ladi.\n\n3. HAYDOVCHI MAJBURIYATLARI\n3.1. Yo'lovchi bilan doimo xushmuomala bo'lish.\n3.2. Transport vositasi toza, ozoda va texnik jihatdan soz bo'lishi.\n3.3. Xizmat jarayonida barcha yo'l harakati qoidalariga rioya qilish.\n3.4. Yo'lovchini xavfsiz va belgilangan manzilga yetkazib qo'yish.\n3.5. Platforma tomonidan belgilangan barcha qoidalarga rioya qilish.\n\n4. PLATFORMANING HUQUQLARI\n4.1. Haydovchi qoidabuzarlik qilgan taqdirda, uni platformadan chetlatish huquqiga ega.\n4.2. Yo'lovchilardan tushgan shikoyatlar tekshiriladi va zarur chora ko'riladi.\n4.3. Platforma haydovchining shaxsiy xatti-harakatlari uchun javobgar emas.\n\n5. YAKUNIY QOIDALAR\n5.1. Ushbu shartnoma muddatsiz tuzilgan bo'lib, tomonlardan biri uni bekor qilishni xohlasa, oldindan ogohlantirishi shart.\n5.2. Har qanday nizolar O'zbekiston Respublikasining amaldagi qonunlariga muvofiq hal etiladi.",
+		"ru": "■ ДОГОВОР С ВОДИТЕЛЕМ\nНастоящий договор заключается между платформой <i>“CarGo”</i> (далее – «Платформа») и водителем (далее – «Водитель»).\nОсновная цель договора – обеспечение пассажиров безопасными, удобными и качественными транспортными услугами.\n\n1. ОБЩИЕ ПОЛОЖЕНИЯ\n1.1. Платформа выступает посредником между пассажиром и водителем.\n1.2. Водитель несет полную ответственность за свою деятельность.\n1.3. Пассажир всегда прав – водитель обязан относиться к клиенту с уважением.\n\n2. ПЛАТЕЖИ И ПРАВИЛА\n2.1. Использование платформы является полностью бесплатным.\n2.2. На данный момент Платформа не взимает с водителя никаких сборов или платежей.\n2.3. Водитель работает за свой счет и несет ответственность за все полученные заказы.\n\n3. ОБЯЗАННОСТИ ВОДИТЕЛЯ\n3.1. Всегда быть вежливым с пассажиром.\n3.2. Автомобиль должен быть чистым, ухоженным и технически исправным.\n3.3. Соблюдать все правила дорожного движения.\n3.4. Обеспечить безопасную доставку пассажира до указанного места назначения.\n3.5. Соблюдать все правила, установленные Платформой.\n\n4. ПРАВА ПЛАТФОРМЫ\n4.1. В случае нарушения правил водитель может быть исключен из системы.\n4.2. Жалобы пассажиров рассматриваются, и принимаются необходимые меры.\n4.3. Платформа не несет ответственности за личные действия водителя.\n\n5. ЗАКЛЮЧИТЕЛЬНЫЕ ПОЛОЖЕНИЯ\n5.1. Договор является бессрочным; любая из сторон может расторгнуть его при предварительном уведомлении.\n5.2. Все споры разрешаются в соответствии с действующим законодательством Республики Узбекистан.",
+		"en": "■ DRIVER AGREEMENT\nThis agreement is made between the <i>“CarGo”</i> platform (hereinafter referred to as the “Platform”) and the driver (hereinafter referred to as the “Driver”).\nThe main purpose of this agreement is to provide passengers with safe, comfortable, and high-quality transportation services.\n\n1. GENERAL RULES\n1.1. The Platform acts as an intermediary between passengers and drivers.\n1.2. The Driver is fully responsible for their own activities.\n1.3. The Passenger is always right – the Driver must treat customers with respect.\n\n2. PAYMENTS AND RULES\n2.1. Use of the Platform is completely free.\n2.2. Currently, the Platform does not charge any fees or commissions from the Driver.\n2.3. The Driver operates at their own expense and is solely responsible for all accepted ride requests.\n\n3. DRIVER OBLIGATIONS\n3.1. Always be polite to passengers.\n3.2. The vehicle must be clean, well-maintained, and technically sound.\n3.3. Comply with all traffic regulations.\n3.4. Ensure safe and timely transportation of the passenger to the specified destination.\n3.5. Follow all rules established by the Platform.\n\n4. PLATFORM RIGHTS\n4.1. The Platform has the right to suspend or remove a Driver who violates the rules.\n4.2. Complaints from passengers will be reviewed and necessary measures taken.\n4.3. The Platform is not responsible for the personal conduct of Drivers.\n\n5. FINAL PROVISIONS\n5.1. This agreement is indefinite; either party may terminate it with prior notice.\n5.2. Any disputes shall be resolved in accordance with the laws of the Republic of Uzbekistan."
+	},
+	"seat_options": {
+		"uz": [
+			1,
+			2,
+			3,
+			4,
+			5
+		],
+		"ru": [
+			1,
+			2,
+			3,
+			4,
+			5
+		],
+		"en": [
+			1,
+			2,
+			3,
+			4,
+			5
+		]
+	}
+}
