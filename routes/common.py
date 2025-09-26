@@ -3,7 +3,7 @@ from aiogram.types import Message, FSInputFile
 from aiogram.fsm.context import FSMContext
 
 from modules import helper
-from language import Lang
+from language.language import Lang
 
 from pathlib import Path
 

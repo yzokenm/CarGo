@@ -9,8 +9,10 @@ from modules import start
 from modules import helper
 
 # Load JSON dict once and "uz" by default
-from language import Lang
-Lang.load("language_dictionary.json")
+from pathlib import Path
+from language.language import Lang
+BASE_DIR = Path(__file__).resolve().parent.parent
+Lang.load(BASE_DIR / "language" / "language_dictionary.json")
 Lang.set("uz")
 
 from routes import passenger, driver, common

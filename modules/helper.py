@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, BotCommand
 
 from database.Mysql import Mysql
-from language import Lang
+from language.language import Lang
 # -------------------- Menu acions --------------------
 def main_menu_kb():
 	options = [

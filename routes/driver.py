@@ -9,7 +9,7 @@ from modules import helper
 from database.Mysql import Mysql
 
 # Lang set up
-from language import Lang
+from language.language import Lang
 
 driver_router = Router()
 

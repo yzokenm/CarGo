@@ -3,7 +3,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from modules import helper
-from language import Lang
+from language.language import Lang
 
 router = Router()
 
