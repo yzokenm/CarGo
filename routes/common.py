@@ -13,7 +13,12 @@ common_router = Router()
 @common_router.message(F.text == Lang.use("navigate_home"))
 async def go_main_menu(message: Message, state: FSMContext):
 	await state.clear()
-	await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
+	photo = FSInputFile(IMAGES_DIR/"ad1.png")
+	await message.answer_photo(
+		photo=photo,
+		caption=Lang.use("main_intro"),
+		reply_markup=helper.main_menu_kb()
+	)
 
 
 # ---- Back Button ----
@@ -49,7 +54,12 @@ async def go_back(message: Message, state: FSMContext):
 			await message.answer(Lang.use("navigate_back"), reply_markup=helper.build_kb(Lang.use("directions"), per_row=2))
 		elif step == "direction":
 			await state.clear()
-			await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
+			photo = FSInputFile(IMAGES_DIR/"ad1.png")
+			await message.answer_photo(
+				photo=photo,
+				caption=Lang.use("main_intro"),
+				reply_markup=helper.main_menu_kb()
+			)
 
 	else:
 		# Default fallback
@@ -94,5 +104,10 @@ async def cancel_request(message: Message, state: FSMContext):
 	if group == "DriverForm":
 		if step == "phone":
 			await state.clear()
-			await message.answer(Lang.use("main_intro"), reply_markup=helper.main_menu_kb())
+			photo = FSInputFile(IMAGES_DIR/"ad1.png")
+			await message.answer_photo(
+				photo=photo,
+				caption=Lang.use("main_intro"),
+				reply_markup=helper.main_menu_kb()
+			)
 			return
