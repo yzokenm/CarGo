@@ -78,6 +78,7 @@ async def handle_phone(message: Message, state: FSMContext):
 	# Check if driver already registered
 	if result == "driver_exist":
 		await message.answer("🚖 Siz ro'yxatdan o'tib bo'lgansiz!\n\n ❗Takroriy ro'yxatdan o'tish talab qilinmaydi.")
+		await state.clear()
 		return
 	else:
 		await message.answer(
@@ -89,7 +90,7 @@ async def handle_phone(message: Message, state: FSMContext):
 				f"⏳ Tez orada sizga yangi so'rovlar keladi. Safarga tayyor turing!",
 			reply_markup=ReplyKeyboardRemove()
 		)
-	await state.clear()
+		await state.clear()
 
 # ---- Accept order ----
 @driver_router.callback_query(F.data.startswith("accept:"))
